@@ -16,6 +16,7 @@ public:
   void showAll();
 
 private:
+  void test();
   int IRsensorAddress = 0xB0;
   //int IRsensorAddress = 0x58;
   int slaveAddress;
