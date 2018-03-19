@@ -98,7 +98,3 @@ void FireSensor::showAll(){
    Serial.println("");
    delay(15);
 }
-
-void FireSensor::test(){
-  Serial.print("");
-}

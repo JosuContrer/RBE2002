@@ -1,15 +1,16 @@
 #include <Arduino.h>
 #include "FireSensor.h"
 
+//Object Creation
 FireSensor fireSensor;
 
 void setup() {
-    // put your setup code here, to run once:
+    //Fire Sensor
     fireSensor.initialize();
 }
 
 void loop() {
-    // put your main code here, to run repeatedly:
+    //Fire Sensor
     fireSensor.useSensor();
     fireSensor.showAll();
 }
