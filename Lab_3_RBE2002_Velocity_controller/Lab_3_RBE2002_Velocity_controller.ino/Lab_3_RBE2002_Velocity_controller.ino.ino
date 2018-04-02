@@ -68,7 +68,7 @@ double calcCur(void)
    double voltVal = analogVal*0.0048875855;
    Serial.println(voltVal);
   //converts to current in milliamps
-  double currentVal = voltVal / motorResistance;
+  double currentVal = voltVal / motorResistance *1000;
   
   return currentVal;
 }
@@ -77,6 +77,7 @@ double calcCur(void)
 void setup() {
   Serial.begin(115200);
   pidCon.setpid(1,0.01,.001);
+  pinMode(0,INPUT);
 }
 
 
