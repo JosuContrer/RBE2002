@@ -15,12 +15,12 @@ PID pidCon;
 Encoder myEnc(2, 3);
 
 //Variables to run the code
-double setVel=90;
+double setVel=180;//90
 double curTime=0;
 double prevTime=0;
 double timeInterval=0;
 double movement=0;
-double ticksToDeg= 0.2206;
+double ticksToDeg= 0.1777777;//.2206
 double prevPos;
 long lastTime=0;
 long lastTime2=0;
@@ -64,8 +64,8 @@ double calcCur(void)
   double analogVal = analogRead(0);
 
   //convert to volts
-  double voltVal = map(analogVal, 0.0, 255.0, 0.0, 5.0);
-
+  //double voltVal = map(analogVal, 0.0, 1023.0, 0.0, 5.0);
+   double voltVal = analogVal*0.0048875855;
    Serial.println(voltVal);
   //converts to current in milliamps
   double currentVal = voltVal / motorResistance;
@@ -82,6 +82,7 @@ void setup() {
 
 //Main loop
 void loop() {
+ 
 //Waits for the time constant
 if(millis()-lastTime>=10){
   

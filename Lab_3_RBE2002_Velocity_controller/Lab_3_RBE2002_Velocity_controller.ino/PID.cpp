@@ -32,10 +32,11 @@ float PID::calc(double setVel, double curVel){
     last_error = error;
 
     // calculate integral error. Running average is best but hard to implement
-    float average = (error + sum_error)/2;
+    //float average = (error + sum_error)/2;
     sum_error += error;
     
-    double integral = ki/average;
+    double integral = ki*sum_error;
+
     
     
     // sum up the error value to send to the motor based off gain values. 
