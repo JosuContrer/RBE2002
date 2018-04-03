@@ -6,7 +6,8 @@ FireSensor fireSensor;
 
 void setup() {
     //Fire Sensor
-    fireSensor.initialize();
+    fireSensor.initialize(); //this initializes the fire sensor
+
 }
 
 void loop() {
