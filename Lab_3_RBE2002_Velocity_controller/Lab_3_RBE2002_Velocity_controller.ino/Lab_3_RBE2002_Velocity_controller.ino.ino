@@ -64,11 +64,10 @@ double calcCur(void)
   double analogVal = analogRead(0);
 
   //convert to volts
-  //double voltVal = map(analogVal, 0.0, 1023.0, 0.0, 5.0);
    double voltVal = analogVal*0.0048875855;
-   //Serial.println(voltVal);
+
   //converts to current in milliamps
-  double currentVal = voltVal *.525 *1000;
+  double currentVal = voltVal /.525 *1000;
   
   return currentVal;
 }
