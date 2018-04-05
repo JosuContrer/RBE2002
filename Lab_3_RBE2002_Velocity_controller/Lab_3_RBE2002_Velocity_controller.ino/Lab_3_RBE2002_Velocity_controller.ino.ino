@@ -15,7 +15,7 @@ PID pidCon;
 Encoder myEnc(2, 3);
 
 //Variables to run the code
-double setVel=360;//90
+double setVel=90;//90
 double curTime=0;
 double prevTime=0;
 double timeInterval=0;
@@ -68,7 +68,7 @@ double calcCur(void)
    double voltVal = analogVal*0.0048875855;
    //Serial.println(voltVal);
   //converts to current in milliamps
-  double currentVal = voltVal *.525 *1000;
+  double currentVal = voltVal /.525 *1000;
   
   return currentVal;
 }
@@ -114,29 +114,29 @@ if(millis()-lastTime>=10){
 if(millis()-lastTime2>50){
 
   //Calculate velocity from the encoder in degrees/second
-  Serial.print("velocity= ,");
+  //Serial.print("velocity= ,");
   Serial.print(velocity);
-  Serial.print(" , ");  
+  Serial.print(", ");  
 
  //Calculates RPM from velocity
-  Serial.print("RPM = ,");
+  //Serial.print("RPM = ,");
   Serial.print(RPM);
-  Serial.print(" , "); 
+  Serial.print(", "); 
 
   //calculates the current of the motor from the analogRead function
   //use the motor drivers data sheet to find the conversion from ADC counts
   //to milliamps 
-  Serial.print("current = ,");
+  //Serial.print("current = ,");
   Serial.print(current);
-  Serial.print(" , "); 
+  Serial.print(", "); 
 
   //Calculates the dutycycle of the PWM 0-1
-  Serial.print("PWM = ,");
+  //Serial.print("PWM = ,");
   Serial.print(PWM);
-  Serial.print(" , "); 
+  Serial.print(", "); 
 
   //Use the lookup table class to find the torque given the current and RPM
-  Serial.print("torque = ,");
+  //Serial.print("torque = ,");
   Serial.print(lk.torque(current,RPM));
   Serial.println("");
   lastTime2=millis();
