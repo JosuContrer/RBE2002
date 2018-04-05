@@ -7,7 +7,7 @@
 class Motor {
 public:
 	Motor(int digitalPin, int analogPin, boolean reversed);
-	void motorSetup();
+	void initialize();
 	void setPower(int);
 
 private:
