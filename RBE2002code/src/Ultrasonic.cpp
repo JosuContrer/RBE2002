@@ -15,10 +15,17 @@ void Ultrasonic::initialize() {
 
 
 int Ultrasonic::readDistance(){
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
+  unsigned long initial = micros();
+  
+  if (micros()-initial <= 2){
+    digitalWrite(trigPin, LOW);
+  }
+
+  initial = micros();
+  if (micros()-initial <= 10){
+    digitalWrite(trigPin, HIGH);
+  }
+
   digitalWrite(trigPin, LOW);
 
   int durationFrequency = pulseIn(echoPin, HIGH);
