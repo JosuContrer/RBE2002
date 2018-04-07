@@ -2,10 +2,15 @@
 #include "FireSensor.h"
 //#include "Motor.h"
 #include "drive.h"
+#include "Ultrasonic.h"
+#include "globalPins.h"
 
 //Object Creation
 FireSensor fireSensor;
 drive driveTrain;
+
+Ultrasonic backLeftUltra(BACKLEFTULTRATRIG, BACKLEFTULTRAECHO);
+Ultrasonic frontLeftUltra(FRONTLEFTULTRATRIG, FRONTLEFTULTRAECHO);
 
 //Still have to implement the revesre part
 //Motor(digitalPin,analogPin,isReverse);
@@ -22,13 +27,15 @@ void setup() {
     // leftMotor.initialize();
     // rightMotor.initialize();
     driveTrain.initialize();
+    Serial.begin(9600);
+
 
 }
 
 void loop() {
     //Fire Sensor hey tye something
-    fireSensor.useSensor();
-    fireSensor.showAll();
+    //fireSensor.useSensor();
+    //fireSensor.showAll();
     //-----------Works-------------
     // digitalWrite(29, LOW);
     // digitalWrite(28, LOW);
@@ -45,7 +52,8 @@ void loop() {
   // leftMotor.setPower(255);
   // rightMotor.setPower(255);
   //
-  driveTrain.setPower(-100,100);
-
+  //driveTrain.setPower(-100,100);
+  frontLeftUltra.readDistance();
+  //backLeftUltra.readDistance();
   //  leftDrive.setPower(50);
 }

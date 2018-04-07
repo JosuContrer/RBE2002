@@ -13,4 +13,10 @@
 #define ARIGHTMOTOR 6
 //boolean isMotorRightReverse = false;
 
+#define BACKLEFTULTRATRIG 22
+#define BACKLEFTULTRAECHO 23
+
+#define FRONTLEFTULTRATRIG 24
+#define FRONTLEFTULTRAECHO 25
+
 #endif

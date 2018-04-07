@@ -1,11 +1,9 @@
 #include "Ultrasonic.h"
 #include <Arduino.h>
 
-Ultrasonic::Ultrasonic(int trig, int echo, int duration, int distance){
+Ultrasonic::Ultrasonic(int trig, int echo){
   trigPin = trig;
-  echoPin = trig;
-  duration = duration;
-  distance = distance;
+  echoPin = echo;
   initialize();
 }
 
@@ -14,10 +12,6 @@ void Ultrasonic::initialize() {
   pinMode(echoPin, INPUT);
 }
 
-void Ultrasonic::setValues(int duration, int distance){
-  duration = duration;
-  distance = distance;
-}
 
 
 int Ultrasonic::readDistance(){
@@ -28,7 +22,11 @@ int Ultrasonic::readDistance(){
   digitalWrite(trigPin, LOW);
 
   int durationFrequency = pulseIn(echoPin, HIGH);
+  //Serial.print("durationFrequency: ");
+  //Serial.println(durationFrequency);
+
   int distanceFromWall = (durationFrequency/2) / 29.1;
+
 
   Serial.print("Distance: ");
   Serial.println(distanceFromWall);
