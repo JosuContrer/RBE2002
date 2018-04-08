@@ -6,8 +6,11 @@
 #include "globalPins.h"
 #include "PID.h"
 #include <LiquidCrystal.h>
-#include "QTRSensors.h"  //
+#include "QTRSensors.h"  //not sure why this is coming up as an error
 #include "EEPROMex.h"
+#include <Wire.h>
+#include <Adafruit_LSM9DS1.h>
+#include <Adafruit_Sensor.h>
 
 
 //State diagram control
@@ -19,6 +22,9 @@ unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
 float gyroValue;
 
+// i2c
+Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
+
 
 //Function prototypes
 void followWall();
@@ -28,6 +34,7 @@ void LeftEncoderTicks();
 void RightEncoderTicks();
 void startOrStop();
 void calibrateLineSensor();
+void setupIMU();
 
 //Object Creation
 FireSensor fireSensor;
@@ -45,59 +52,60 @@ unsigned int sensors[3];
 //  Motor rightMotor(28,6,false);
 
 void setup() {
-    //Fire Sensor
-    // pinMode(29,OUTPUT);
-    // pinMode(28,OUTPUT);
-    // pinMode(6,OUTPUT);
-    // pinMode(7, OUTPUT);
-    state = STOP; //Robot will start being stopped
-    startStop = START; //Robot will move once button is pushed
+  //Fire Sensor
+  // pinMode(29,OUTPUT);
+  // pinMode(28,OUTPUT);
+  // pinMode(6,OUTPUT);
+  // pinMode(7, OUTPUT);
+  state = STOP; //Robot will start being stopped
+  startStop = START; //Robot will move once button is pushed
 
-    pinMode(19, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
-    pinMode(2, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
-    pinMode(18, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(18), startOrStop, FALLING);
+  pinMode(19, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
+  pinMode(2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
+  pinMode(18, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(18), startOrStop, FALLING);
 
-    fireSensor.initialize(); //this initializes the fire sensor
-     // leftMotor.initialize();
-     // rightMotor.initialize();
-    calibrateLineSensor();
-    driveTrain.initialize();
-    driveStraightPID.setpid(5,.1,0);
+  setupIMU();
+  fireSensor.initialize(); //this initializes the fire sensor
+  // leftMotor.initialize();
+  // rightMotor.initialize();
+  calibrateLineSensor();
+  driveTrain.initialize();
+  driveStraightPID.setpid(5,.1,0);
 
-    lcd.begin(16, 2);
-    Serial.begin(9600);
+  lcd.begin(16, 2);
+  Serial.begin(9600);
 
 }
 
 void loop() {
-    switch(state){
-      case WALLFOLLOW:
-        drive();
-        break;
-      case STOP:
-        driveTrain.setPower(0, 0);
-        break;
-    }
+  switch(state){
+    case WALLFOLLOW:
+    drive();
+    break;
+    case STOP:
+    driveTrain.setPower(0, 0);
+    break;
+  }
 
-    //Fire Sensor hey tye something
-    //fireSensor.useSensor();
-    //fireSensor.showAll();
-    //-----------Works-------------
-    // digitalWrite(29, LOW);
-    // digitalWrite(28, LOW);
-    // analogWrite(7,255);
-    // analogWrite(6,255);
-    // delay(1000);
-    // digitalWrite(29, HIGH);
-    // digitalWrite(28, HIGH);
-    // analogWrite(7,255);
-    // analogWrite(6,255);
-    // delay(1000);
-    //---------------------------
-    //--------Testing------------
+  //Fire Sensor hey tye something
+  //fireSensor.useSensor();
+  //fireSensor.showAll();
+  //-----------Works-------------
+  // digitalWrite(29, LOW);
+  // digitalWrite(28, LOW);
+  // analogWrite(7,255);
+  // analogWrite(6,255);
+  // delay(1000);
+  // digitalWrite(29, HIGH);
+  // digitalWrite(28, HIGH);
+  // analogWrite(7,255);
+  // analogWrite(6,255);
+  // delay(1000);
+  //---------------------------
+  //--------Testing------------
   // leftMotor.setPower(255);
   // rightMotor.setPower(255);
   //
@@ -165,20 +173,20 @@ void calcXandY(){
 void startOrStop(){
   switch(startStop){
     case STOPROBOT:
-      state = STOP;
-      lcd.clear();
-      lcd.setCursor(0, 1);
-      lcd.print("STOPPED");
-      startStop = START;
-      break;
+    state = STOP;
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("STOPPED");
+    startStop = START;
+    break;
 
     case START:
-      state = WALLFOLLOW;
-      lcd.clear();
-      lcd.setCursor(0, 1);
-      lcd.print("STARTING");
-      startStop = STOPROBOT;
-      break;
+    state = WALLFOLLOW;
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("STARTING");
+    startStop = STOPROBOT;
+    break;
   }
 }
 
@@ -221,4 +229,48 @@ void calibrateLineSensor() {
 
   digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
   delay(1000);
+}
+
+
+//This sets up the IMU
+void setupIMU()
+{
+  // 1.) Set the accelerometer range
+  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
+
+  // 2.) Set the magnetometer sensitivity
+  lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
+  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_8GAUSS);
+  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_12GAUSS);
+  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_16GAUSS);
+
+  // 3.) Setup the gyroscope
+  lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
+  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);
+  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
+}
+
+int gyroVal(){
+  lsm.read();  /* ask it to read in the data */
+  
+  /* Get a new sensor event */
+  sensors_event_t a, m, g, temp;
+
+  lsm.getEvent(&a, &m, &g, &temp);
+
+  // Serial.print("Accel X: "); Serial.print(a.acceleration.x); Serial.print(" m/s^2");
+  // Serial.print("\tY: "); Serial.print(a.acceleration.y);     Serial.print(" m/s^2 ");
+  // Serial.print("\tZ: "); Serial.print(a.acceleration.z);     Serial.println(" m/s^2 ");
+  //
+  // Serial.print("Mag X: "); Serial.print(m.magnetic.x);   Serial.print(" gauss");
+  // Serial.print("\tY: "); Serial.print(m.magnetic.y);     Serial.print(" gauss");
+  // Serial.print("\tZ: "); Serial.print(m.magnetic.z);     Serial.println(" gauss");
+  //
+  // Serial.print("Gyro X: "); Serial.print(g.gyro.x);   Serial.print(" dps");
+  // Serial.print("\tY: "); Serial.print(g.gyro.y);      Serial.print(" dps");
+  // Serial.print("\tZ: "); Serial.print(g.gyro.z);      Serial.println(" dps");
+  return g.gyro.z;
 }
