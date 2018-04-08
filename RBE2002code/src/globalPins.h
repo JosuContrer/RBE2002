@@ -22,4 +22,14 @@
 #define FRONTULTRATRIG 1 //NEED TO CHANGE
 #define FRONTULTRAECHO 2 //NEED TO CHANGE
 
+
+
+//FOR LINE FOLLOWER
+#define NUM_SENSORS             6 // number of sensors used
+#define NUM_SAMPLES_PER_SENSOR  4 // average 4 analog samples per sensor reading
+#define EMITTER_PIN             2 // emitter is controlled by digital pin 2
+#define addrCalibratedMinimumOn 0
+#define addrCalibratedMaximumOn 100
+
+
 #endif

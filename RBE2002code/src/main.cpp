@@ -6,6 +6,8 @@
 #include "globalPins.h"
 #include "PID.h"
 #include <LiquidCrystal.h>
+#include "QTRSensors.h"  //
+#include "EEPROMex.h"
 
 
 //State diagram control
@@ -15,14 +17,17 @@ float x;
 float y;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
+float gyroValue;
+
 
 //Function prototypes
 void followWall();
 void printLCD(int, int, char[]);
-void calcXandY(unsigned long, float);
-void leftEncoderTicks();
-void rightEncoderTicks();
+void calcXandY();
+void LeftEncoderTicks();
+void RightEncoderTicks();
 void startOrStop();
+void calibrateLineSensor();
 
 //Object Creation
 FireSensor fireSensor;
@@ -32,6 +37,8 @@ Ultrasonic frontLeftUltra(FRONTLEFTULTRATRIG, FRONTLEFTULTRAECHO);
 Ultrasonic frontUltra(FRONTULTRATRIG, FRONTULTRAECHO);
 PID driveStraightPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
+QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
+unsigned int sensors[3];
 //Still have to implement the revesre part
 // Motor(digitalPin,analogPin,isReverse);
 //  Motor leftMotor(29,7,true);
@@ -43,26 +50,29 @@ void setup() {
     // pinMode(28,OUTPUT);
     // pinMode(6,OUTPUT);
     // pinMode(7, OUTPUT);
+    state = STOP; //Robot will start being stopped
+    startStop = START; //Robot will move once button is pushed
 
     pinMode(19, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(19), leftEncoderTicks, RISING);
+    attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
     pinMode(2, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(2), rightEncoderTicks, RISING);
+    attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
     pinMode(18, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(18), startOrStop, FALLING);
 
     fireSensor.initialize(); //this initializes the fire sensor
      // leftMotor.initialize();
      // rightMotor.initialize();
+    calibrateLineSensor();
     driveTrain.initialize();
     driveStraightPID.setpid(5,.1,0);
 
     lcd.begin(16, 2);
     Serial.begin(9600);
+
 }
 
 void loop() {
-    state = WALLFOLLOW;
     switch(state){
       case WALLFOLLOW:
         drive();
@@ -101,10 +111,13 @@ void loop() {
 void drive(){
   if (frontUltra.readDistance() <= 10){ //the trig and echo pin need to be set to correct values
     driveTrain.setPower(0, 0);
+    calcXandY();
     //change to new switch case here, will need to turn now
   }
-  if (0){ //have this if statement be if line follower is triggered
-
+  if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
+    driveTrain.setPower(0, 0);
+    calcXandY();
+    //change to new switch case here, will need to turn now
   }
   if(0){ //have this if statement be if flame sensor is triggered
 
@@ -143,7 +156,7 @@ void followWall(){
 }
 
 
-void calcXandY(unsigned long leftEncoder, float gyroValue){
+void calcXandY(){
   x = x + (leftEncTicks / 100) * cos(gyroValue);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
   y = y + (leftEncTicks / 100) * sin(gyroValue);
 }
@@ -188,4 +201,24 @@ void LeftEncoderTicks() {
 //count right encoder ticks
 void RightEncoderTicks() {
   rightEncTicks++;
+}
+
+
+void calibrateLineSensor() {
+  Serial.println("Calibrating....");
+  delay(500);
+
+  qtraSix.emittersOn();
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
+
+  qtraSix.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
+  //qtrrc.calibrate();
+  EEPROM.readBlock<unsigned int>(addrCalibratedMinimumOn, qtraSix.calibratedMinimumOn, 8);
+  EEPROM.readBlock<unsigned int>(addrCalibratedMaximumOn, qtraSix.calibratedMaximumOn, 8);
+
+  Serial.println("EEPROM Recall Complete");
+
+  digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
+  delay(1000);
 }
