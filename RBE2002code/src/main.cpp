@@ -10,13 +10,19 @@
 
 //State diagram control
 enum State {STOP, WALLFOLLOW} state;
+enum State2 {STOPROBOT, START} startStop;
 float x;
 float y;
-
+unsigned long leftEncTicks = 0;
+unsigned long rightEncTicks = 0;
 
 //Function prototypes
 void followWall();
 void printLCD(int, int, char[]);
+void calcXandY(unsigned long, float);
+void leftEncoderTicks();
+void rightEncoderTicks();
+void startOrStop();
 
 //Object Creation
 FireSensor fireSensor;
@@ -37,6 +43,14 @@ void setup() {
     // pinMode(28,OUTPUT);
     // pinMode(6,OUTPUT);
     // pinMode(7, OUTPUT);
+
+    pinMode(19, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(19), leftEncoderTicks, RISING);
+    pinMode(2, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(2), rightEncoderTicks, RISING);
+    pinMode(18, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(18), startOrStop, FALLING);
+
     fireSensor.initialize(); //this initializes the fire sensor
      // leftMotor.initialize();
      // rightMotor.initialize();
@@ -128,6 +142,34 @@ void followWall(){
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
+
+void calcXandY(unsigned long leftEncoder, float gyroValue){
+  x = x + (leftEncTicks / 100) * cos(gyroValue);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
+  y = y + (leftEncTicks / 100) * sin(gyroValue);
+}
+
+
+void startOrStop(){
+  switch(startStop){
+    case STOPROBOT:
+      state = STOP;
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("STOPPED");
+      startStop = START;
+      break;
+
+    case START:
+      state = WALLFOLLOW;
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("STARTING");
+      startStop = STOPROBOT;
+      break;
+  }
+}
+
+
 void printLCD(int valOne, int valTwo, char message[]){
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -136,4 +178,14 @@ void printLCD(int valOne, int valTwo, char message[]){
   lcd.print(valTwo);
   lcd.setCursor(0,1);
   lcd.print(message);
+}
+
+//count left encoder ticks
+void LeftEncoderTicks() {
+  leftEncTicks++;
+}
+
+//count right encoder ticks
+void RightEncoderTicks() {
+  rightEncTicks++;
 }
