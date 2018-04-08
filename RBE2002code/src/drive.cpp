@@ -1,6 +1,9 @@
 #include "Motor.h"
 #include "drive.h"
 #include "globalPins.h"
+#include <Ultrasonic.h>
+#include "PID.h"
+
 
 drive::drive():
   leftMotor(DLEFTMOTOR, ALEFTMOTOR, false),

@@ -16,7 +16,7 @@ void Ultrasonic::initialize() {
 
 int Ultrasonic::readDistance(){
   unsigned long initial = micros();
-  
+
   if (micros()-initial <= 2){
     digitalWrite(trigPin, LOW);
   }

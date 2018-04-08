@@ -16,7 +16,6 @@ void PID::setpid(float P, float I, float D){
 //and the current velocity
 float PID::calc(int sensorOne, int sensorTwo){
 
-
     // calculate error
     double error = sensorOne - sensorTwo;
 
@@ -34,12 +33,12 @@ float PID::calc(int sensorOne, int sensorTwo){
     // sum up the error value to send to the motor based off gain values.
      double controlSignal = (kp * error) + derivative + integral;
 
-    // limit control value to 0-254
+    // limit control value to 0-254 *put in thr main dont add here*
     if(controlSignal < 0){
-      controlSignal = 0;
+      //controlSignal = 0;
     }
     if(controlSignal > 254){
-      controlSignal = 254;
+      //controlSignal = 254;
     }
 
     //return the control signal
