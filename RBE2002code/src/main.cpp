@@ -187,9 +187,9 @@ void followWall(){
 
 
 void calcXandY(){
-  x = x + (leftEncTicks / 100) * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (leftEncTicks / 100) * sin(gyro);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
-  //17.28/64 .27in/tick
+  x = x + (leftEncTicks *.09) * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
+  y = y + (leftEncTicks *.09) * sin(gyro);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  //17.28/64 .27in/tick /3 cause gears
 }
 
 
@@ -258,15 +258,15 @@ void setupIMU()
 {
 
   lcd.print("here");
-  if(!lsm.begin()){
+  if(lsm.begin()){
     lcd.clear();
 
     while(1){
-      lcd.print("Wiring Problem");
+      lcd.print("Wiring Pass");
     }
   }
   else{
-    lcd.print("wiring passed");
+    lcd.print("bad");
   }
   // 1.) Set the accelerometer range
   lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
