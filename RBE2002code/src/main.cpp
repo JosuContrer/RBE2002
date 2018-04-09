@@ -27,6 +27,7 @@ Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
 
 
 //Function prototypes
+void driveFollow();
 void followWall();
 void printLCD(int, int, char[]);
 void calcXandY();
@@ -46,10 +47,6 @@ PID driveStraightPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
 unsigned int sensors[3];
-//Still have to implement the revesre part
-// Motor(digitalPin,analogPin,isReverse);
-//  Motor leftMotor(29,7,true);
-//  Motor rightMotor(28,6,false);
 
 void setup() {
   //Fire Sensor
@@ -60,20 +57,20 @@ void setup() {
   state = STOP; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
-  pinMode(19, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
-  pinMode(2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
-  pinMode(20, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
+   pinMode(19, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
+   pinMode(2, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
+   pinMode(20, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
 
-  //setupIMU();
-  fireSensor.initialize(); //this initializes the fire sensor
-  // leftMotor.initialize();
-  // rightMotor.initialize();
-  calibrateLineSensor();
-  driveTrain.initialize();
-  driveStraightPID.setpid(5,.1,0);
+  //setupIMU(); //problem
+ //fireSensor.initialize(); //this initializes the fire sensor
+  // // leftMotor.initialize();
+  // // rightMotor.initialize();
+   calibrateLineSensor();
+   driveTrain.initialize();
+   driveStraightPID.setpid(5,.1,0);
 
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -81,15 +78,17 @@ void setup() {
 }
 
 void loop() {
-  lcd.clear();
-  lcd.setCursor(0, 1);
-  lcd.print("inLoop");
+  //lcd.clear();
+  //lcd.setCursor(0, 1);
+  //lcd.print("inLoop");
+
+  //----------Caleb code--------
   switch(state){
     case WALLFOLLOW:
-    lcd.clear();
+    //lcd.clear();
     lcd.setCursor(0, 1);
     lcd.print("Start");
-    drive();
+    driveFollow();
     break;
     case STOP:
     lcd.clear();
@@ -98,6 +97,7 @@ void loop() {
     driveTrain.setPower(0, 0);
     break;
   }
+  //----------------------------
 
   //Fire Sensor hey tye something
   //fireSensor.useSensor();
@@ -118,14 +118,15 @@ void loop() {
   // leftMotor.setPower(255);
   // rightMotor.setPower(255);
   //
-  //driveTrain.setPower(-100,100);
+  //driveTrain.setPower(0,0);
 
 
 }
 
 
 //This function is the state level control for driving
-void drive(){
+void driveFollow(){
+  lcd.clear();
   lcd.print("inDrive");
   if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
     driveTrain.setPower(0, 0);
