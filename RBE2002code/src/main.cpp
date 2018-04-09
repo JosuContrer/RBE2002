@@ -20,7 +20,9 @@ float x;
 float y;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
-float gyroValue;
+
+int gyro;
+void gyroVal();
 
 // i2c
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
@@ -36,6 +38,7 @@ void RightEncoderTicks();
 void startOrStop();
 void calibrateLineSensor();
 void setupIMU();
+
 
 //Object Creation
 FireSensor fireSensor;
@@ -64,11 +67,11 @@ void setup() {
    pinMode(20, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
 
-  //setupIMU(); //problem
+  setupIMU(); //problem
  //fireSensor.initialize(); //this initializes the fire sensor
   // // leftMotor.initialize();
   // // rightMotor.initialize();
-   calibrateLineSensor();
+   //calibrateLineSensor();
    driveTrain.initialize();
    driveStraightPID.setpid(5,.1,0);
 
@@ -80,8 +83,10 @@ void setup() {
 void loop() {
   //lcd.clear();
   //lcd.setCursor(0, 1);
-  //lcd.print("inLoop");
+  lcd.print("inLoop");
 
+  //gyroVal();
+  lcd.clear();
   //----------Caleb code--------
   switch(state){
     case WALLFOLLOW:
@@ -128,6 +133,8 @@ void loop() {
 void driveFollow(){
   lcd.clear();
   lcd.print("inDrive");
+  lcd.setCursor(0,1);
+  lcd.print(gyro);
   if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
     driveTrain.setPower(0, 0);
     calcXandY();
@@ -180,13 +187,16 @@ void followWall(){
 
 
 void calcXandY(){
-  x = x + (leftEncTicks / 100) * cos(gyroValue);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (leftEncTicks / 100) * sin(gyroValue);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  x = x + (leftEncTicks / 100) * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
+  y = y + (leftEncTicks / 100) * sin(gyro);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
   //17.28/64 .27in/tick
 }
 
 
 void startOrStop(){
+  noInterrupts();
+  delayMicroseconds(10);
+  interrupts();
   switch(startStop){
     case STOPROBOT:
     state = STOP;
@@ -198,6 +208,7 @@ void startOrStop(){
     startStop = STOPROBOT;
     break;
   }
+
 }
 
 
@@ -245,6 +256,18 @@ void calibrateLineSensor() {
 //This sets up the IMU
 void setupIMU()
 {
+
+  lcd.print("here");
+  if(!lsm.begin()){
+    lcd.clear();
+
+    while(1){
+      lcd.print("Wiring Problem");
+    }
+  }
+  else{
+    lcd.print("wiring passed");
+  }
   // 1.) Set the accelerometer range
   lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
   //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
@@ -263,9 +286,9 @@ void setupIMU()
   //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
 }
 
-int gyroVal(){
+void gyroVal(){
   lsm.read();  /* ask it to read in the data */
-
+  Serial.print("gyro");
   /* Get a new sensor event */
   sensors_event_t a, m, g, temp;
 
@@ -282,5 +305,5 @@ int gyroVal(){
   // Serial.print("Gyro X: "); Serial.print(g.gyro.x);   Serial.print(" dps");
   // Serial.print("\tY: "); Serial.print(g.gyro.y);      Serial.print(" dps");
   // Serial.print("\tZ: "); Serial.print(g.gyro.z);      Serial.println(" dps");
-  return g.gyro.z;
+  gyro= g.gyro.z;
 }
