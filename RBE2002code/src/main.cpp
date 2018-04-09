@@ -61,11 +61,11 @@ void setup() {
   startStop = START; //Robot will move once button is pushed
 
   pinMode(19, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
+  //attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
   pinMode(2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
-  pinMode(18, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(18), startOrStop, FALLING);
+  //attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
+  pinMode(20, INPUT_PULLUP);
+  //attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
 
   setupIMU();
   fireSensor.initialize(); //this initializes the fire sensor
@@ -81,11 +81,18 @@ void setup() {
 }
 
 void loop() {
+  lcd.print("inLoop");
   switch(state){
     case WALLFOLLOW:
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("Start");
     drive();
     break;
     case STOP:
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("STOPPED");
     driveTrain.setPower(0, 0);
     break;
   }
@@ -117,14 +124,19 @@ void loop() {
 
 //This function is the state level control for driving
 void drive(){
-  if (frontUltra.readDistance() <= 10){ //the trig and echo pin need to be set to correct values
+  lcd.print("inDrive");
+  if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
     driveTrain.setPower(0, 0);
     calcXandY();
+    char message[] = "Left/Right Motor Speeds";
+    printLCD(x,y,message);
     //change to new switch case here, will need to turn now
   }
   if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
     driveTrain.setPower(0, 0);
     calcXandY();
+    char message[] = "Left/Right Motor Speeds";
+    printLCD(x,y,message);
     //change to new switch case here, will need to turn now
   }
   if(0){ //have this if statement be if flame sensor is triggered
@@ -158,7 +170,7 @@ void followWall(){
   Serial.println(newRightSpeed);
 
   char message[] = "Left/Right Motor Speeds";
-  printLCD(newLeftSpeed, newRightSpeed, message);
+  printLCD(x, y, message);
 
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
@@ -166,7 +178,8 @@ void followWall(){
 
 void calcXandY(){
   x = x + (leftEncTicks / 100) * cos(gyroValue);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (leftEncTicks / 100) * sin(gyroValue);
+  y = y + (leftEncTicks / 100) * sin(gyroValue);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  //17.28/64 .27in/tick
 }
 
 
@@ -174,17 +187,11 @@ void startOrStop(){
   switch(startStop){
     case STOPROBOT:
     state = STOP;
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("STOPPED");
     startStop = START;
     break;
 
     case START:
     state = WALLFOLLOW;
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("STARTING");
     startStop = STOPROBOT;
     break;
   }
@@ -255,7 +262,7 @@ void setupIMU()
 
 int gyroVal(){
   lsm.read();  /* ask it to read in the data */
-  
+
   /* Get a new sensor event */
   sensors_event_t a, m, g, temp;
 

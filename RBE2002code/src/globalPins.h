@@ -8,7 +8,7 @@
 #define DLEFTMOTOR 29
 #define ALEFTMOTOR 7
 //boolean isMotorLeftReverse = true;
-
+#define BUTTON 20
 #define DRIGHTMOTOR 28
 #define ARIGHTMOTOR 6
 //boolean isMotorRightReverse = false;
@@ -19,8 +19,8 @@
 #define FRONTLEFTULTRATRIG 24
 #define FRONTLEFTULTRAECHO 25
 
-#define FRONTULTRATRIG 1 //NEED TO CHANGE
-#define FRONTULTRAECHO 2 //NEED TO CHANGE
+#define FRONTULTRATRIG 10 //NEED TO CHANGE
+#define FRONTULTRAECHO 9 //NEED TO CHANGE
 
 
 
