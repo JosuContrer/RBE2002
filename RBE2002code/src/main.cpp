@@ -61,13 +61,13 @@ void setup() {
   startStop = START; //Robot will move once button is pushed
 
   pinMode(19, INPUT_PULLUP);
-  //attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
+  attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
   pinMode(2, INPUT_PULLUP);
-  //attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
+  attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
   pinMode(20, INPUT_PULLUP);
-  //attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
+  attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
 
-  setupIMU();
+  //setupIMU();
   fireSensor.initialize(); //this initializes the fire sensor
   // leftMotor.initialize();
   // rightMotor.initialize();
@@ -81,6 +81,8 @@ void setup() {
 }
 
 void loop() {
+  lcd.clear();
+  lcd.setCursor(0, 1);
   lcd.print("inLoop");
   switch(state){
     case WALLFOLLOW:
