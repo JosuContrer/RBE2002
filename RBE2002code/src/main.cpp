@@ -11,7 +11,7 @@
 #include <Wire.h>
 #include <Adafruit_LSM9DS1.h>
 #include <Adafruit_Sensor.h>
-
+#include <SPI.h>//not used but needed?
 
 //State diagram control
 enum State {STOP, WALLFOLLOW} state;
@@ -261,9 +261,9 @@ void setupIMU()
   if(lsm.begin()){
     lcd.clear();
 
-    while(1){
+
       lcd.print("Wiring Pass");
-    }
+
   }
   else{
     lcd.print("bad");
