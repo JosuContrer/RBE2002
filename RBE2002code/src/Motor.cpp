@@ -32,7 +32,7 @@ void Motor::setPower(int power) {
     power = -1*power;
   }
 
-	if ((millis() - lastSetTime) > 20) {	//prevents from updating the motor too quickly
+//	if ((millis() - lastSetTime) > 20) {	//prevents from updating the motor too quickly
 		if (power < 0) {
 			digitalWrite(dPin, LOW);
     }else{
@@ -40,6 +40,6 @@ void Motor::setPower(int power) {
     }
 
     analogWrite(aPin, abs(power));
-		lastSetTime = millis();
-	}
+	//	lastSetTime = millis();
+	//}
 }
