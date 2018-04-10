@@ -58,14 +58,16 @@ void setup() {
   // pinMode(6,OUTPUT);
   // pinMode(7, OUTPUT);
   state = STOP; //Robot will start being stopped
+  //state = WALLFOLLOW;
+
   startStop = START; //Robot will move once button is pushed
 
    pinMode(19, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(19), LeftEncoderTicks, RISING);
+   attachInterrupt(digitalPinToInterrupt(18), LeftEncoderTicks, RISING);
    pinMode(2, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
-   pinMode(20, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(20), startOrStop, RISING);
+   pinMode(18, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(19), startOrStop, RISING);
 
   setupIMU(); //problem
  //fireSensor.initialize(); //this initializes the fire sensor
@@ -83,22 +85,24 @@ void setup() {
 void loop() {
   //lcd.clear();
   //lcd.setCursor(0, 1);
-  lcd.print("inLoop");
-
+  //lcd.print("inLoop");
+  //Serial.println("inLoop");
   //gyroVal();
-  lcd.clear();
+  //lcd.clear();
+  Serial.println(state);
   //----------Caleb code--------
   switch(state){
     case WALLFOLLOW:
     //lcd.clear();
     lcd.setCursor(0, 1);
     lcd.print("Start");
+    // Serial.println("in switch case drive");
     driveFollow();
     break;
     case STOP:
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("STOPPED");
+    // lcd.clear();
+    // lcd.setCursor(0, 1);
+    // lcd.print("STOPPED");
     driveTrain.setPower(0, 0);
     break;
   }
@@ -131,24 +135,26 @@ void loop() {
 
 //This function is the state level control for driving
 void driveFollow(){
-  lcd.clear();
-  lcd.print("inDrive");
-  lcd.setCursor(0,1);
-  lcd.print(gyro);
+  // lcd.clear();
+  // lcd.print("inDrive");
+  // lcd.setCursor(0,1);
+  // lcd.print(gyro);
+  // Serial.println(frontUltra.readDistance());
+  // Serial.println("in driveFollow()");
   if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
     driveTrain.setPower(0, 0);
     calcXandY();
-    char message[] = "Left/Right Motor Speeds";
+    char message[] = "Distance travelled";
     printLCD(x,y,message);
-    //change to new switch case here, will need to turn now
+    state = STOP;    //change to new switch case here, will need to turn now
   }
-  if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
-    driveTrain.setPower(0, 0);
-    calcXandY();
-    char message[] = "Left/Right Motor Speeds";
-    printLCD(x,y,message);
-    //change to new switch case here, will need to turn now
-  }
+  // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
+  //   driveTrain.setPower(0, 0);
+  //   calcXandY();
+  //   char message[] = "Left/Right Motor Speeds";
+  //   printLCD(x,y,message);
+  //   //change to new switch case here, will need to turn now
+  // }
   if(0){ //have this if statement be if flame sensor is triggered
 
   }
@@ -160,6 +166,7 @@ void driveFollow(){
 
 //This function has the robot follow a wall using the PID
 void followWall(){
+  // Serial.println("in followWall()");
   int baseRightSpeed = 90;
   int baseLeftSpeed = 90;
 
@@ -174,13 +181,13 @@ void followWall(){
   int newLeftSpeed = baseLeftSpeed + proportionalVal;
   int newRightSpeed = baseRightSpeed - proportionalVal;
   // leftDrive.setPower(50);
-  Serial.print("Left: ");
-  Serial.println(newLeftSpeed);
-  Serial.print("Right: ");
-  Serial.println(newRightSpeed);
+  // Serial.print("Left: ");
+  // Serial.println(newLeftSpeed);
+  // Serial.print("Right: ");
+  // Serial.println(newRightSpeed);
 
   char message[] = "Left/Right Motor Speeds";
-  printLCD(x, y, message);
+  printLCD(newLeftSpeed, newRightSpeed, message);
 
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
@@ -194,19 +201,20 @@ void calcXandY(){
 
 
 void startOrStop(){
-  noInterrupts();
+  //noInterrupts();
+  Serial.println("Inside button interrupt");
   delayMicroseconds(10);
-  interrupts();
+  //interrupts();
   switch(startStop){
     case STOPROBOT:
-    state = STOP;
-    startStop = START;
-    break;
+      state = STOP;
+      startStop = START;
+      break;
 
     case START:
-    state = WALLFOLLOW;
-    startStop = STOPROBOT;
-    break;
+      state = WALLFOLLOW;
+      startStop = STOPROBOT;
+      break;
   }
 
 }
@@ -288,7 +296,7 @@ void setupIMU()
 
 void gyroVal(){
   lsm.read();  /* ask it to read in the data */
-  Serial.print("gyro");
+  //Serial.print("gyro");
   /* Get a new sensor event */
   sensors_event_t a, m, g, temp;
 
