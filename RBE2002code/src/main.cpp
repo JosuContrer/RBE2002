@@ -62,11 +62,11 @@ void setup() {
 
   startStop = START; //Robot will move once button is pushed
 
-   pinMode(19, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(18), LeftEncoderTicks, RISING);
    pinMode(2, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(2), RightEncoderTicks, RISING);
-   pinMode(18, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, RISING);
+   pinMode(3, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, RISING);
+   pinMode(19, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(19), startOrStop, RISING);
 
   setupIMU(); //problem
@@ -93,16 +93,16 @@ void loop() {
   //----------Caleb code--------
   switch(state){
     case WALLFOLLOW:
-    //lcd.clear();
-    lcd.setCursor(0, 1);
+
+    lcd.setCursor(9, 1);
     lcd.print("Start");
     // Serial.println("in switch case drive");
     driveFollow();
+    calcXandY();
     break;
     case STOP:
-    // lcd.clear();
-    // lcd.setCursor(0, 1);
-    // lcd.print("STOPPED");
+     lcd.setCursor(9, 1);
+     lcd.print("STOPPED");
     driveTrain.setPower(0, 0);
     break;
   }
@@ -141,13 +141,13 @@ void driveFollow(){
   // lcd.print(gyro);
   // Serial.println(frontUltra.readDistance());
   // Serial.println("in driveFollow()");
-  if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
-    driveTrain.setPower(0, 0);
-    calcXandY();
-    char message[] = "Distance travelled";
-    printLCD(x,y,message);
-    state = STOP;    //change to new switch case here, will need to turn now
-  }
+      // if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
+      //   driveTrain.setPower(0, 0);
+      //   calcXandY();
+      //   char message[] = "Distance travelled";
+      //   printLCD(x,y,message);
+      //   state = STOP;    //change to new switch case here, will need to turn now
+      // }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
   //   calcXandY();
@@ -155,12 +155,12 @@ void driveFollow(){
   //   printLCD(x,y,message);
   //   //change to new switch case here, will need to turn now
   // }
-  if(0){ //have this if statement be if flame sensor is triggered
+  // if(0){ //have this if statement be if flame sensor is triggered
+  //
+  // }
 
-  }
-  else{
     followWall();
-  }
+
 }
 
 
@@ -186,25 +186,29 @@ void followWall(){
   // Serial.print("Right: ");
   // Serial.println(newRightSpeed);
 
-  char message[] = "Left/Right Motor Speeds";
-  printLCD(newLeftSpeed, newRightSpeed, message);
+  char message[] = "X/Y val";
+  printLCD(x, y, message);
 
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
 
 void calcXandY(){
-  x = x + (leftEncTicks *.09) * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (leftEncTicks *.09) * sin(gyro);   //64ticks/rev max res, 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
-  //17.28/64 .27in/tick /3 cause gears
+  double temp= (leftEncTicks + rightEncTicks)/2;
+  x = x + (temp *.0072);// * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
+  y = y + (temp *.0072);// * sin(gyro);   // 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  leftEncTicks=0;
+  rightEncTicks=0;
+  //800 counts per rev for rising edge single channel 1/800 *17.28 * 1/3
 }
 
 
 void startOrStop(){
-  //noInterrupts();
+  noInterrupts();
   Serial.println("Inside button interrupt");
   delayMicroseconds(10);
-  //interrupts();
+  lcd.clear();
+  interrupts();
   switch(startStop){
     case STOPROBOT:
       state = STOP;
@@ -233,6 +237,7 @@ void printLCD(int valOne, int valTwo, char message[]){
 //count left encoder ticks
 void LeftEncoderTicks() {
   leftEncTicks++;
+
 }
 
 //count right encoder ticks
@@ -265,16 +270,8 @@ void calibrateLineSensor() {
 void setupIMU()
 {
 
-  lcd.print("here");
-  if(lsm.begin()){
-    lcd.clear();
-
-
-      lcd.print("Wiring Pass");
-
-  }
-  else{
-    lcd.print("bad");
+  if(!lsm.begin()){
+    lcd.print("error");
   }
   // 1.) Set the accelerometer range
   lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
