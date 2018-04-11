@@ -63,9 +63,9 @@ void setup() {
   startStop = START; //Robot will move once button is pushed
 
    pinMode(2, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, RISING);
+   attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
    pinMode(3, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, RISING);
+   attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
    pinMode(19, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(19), startOrStop, RISING);
 
@@ -195,8 +195,8 @@ void followWall(){
 
 void calcXandY(){
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + (temp *.0072);// * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (temp *.0072);// * sin(gyro);   // 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  x = x + (temp *.0072*2);// * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
+  y = y + (temp *.0072*2);// * sin(gyro);   // 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
   leftEncTicks=0;
   rightEncTicks=0;
   //800 counts per rev for rising edge single channel 1/800 *17.28 * 1/3
