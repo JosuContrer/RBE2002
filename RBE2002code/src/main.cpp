@@ -54,7 +54,32 @@ unsigned int sensors[3];
 int frontUltraVal=0;
 int backUltraVal=0;
 
+int avg(){
+  int avg=0;
+  int savedReads[5];
+  for(int i=1;i<4;i++){
+  savedReads[4-i]=savedReads[4-i-1];
+  }
+  savedReads[0]=frontUltra.readDistance();
+  int sum=0,divider=0;
 
+  for(int i=0;i<5;i++){
+    if (savedReads[i]<30 && savedReads[i]>0){
+      sum+=savedReads[i];
+      divider++;
+    }
+  }
+if(divider!=0){
+  avg=sum/divider;
+}
+else{
+  avg = 50;//random number that wont trigger anything
+}
+if(!(avg<40&&avg>0)){
+  avg=50;
+}
+return avg;
+}
 
 void setup() {
   //Fire Sensor
@@ -80,7 +105,7 @@ void setup() {
   // // rightMotor.initialize();
    //calibrateLineSensor();
    driveTrain.initialize();
-   driveStraightPID.setpid(6,.2,0);
+   driveStraightPID.setpid(7,.2,0);
 
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -115,9 +140,15 @@ void loop() {
 
       lcd.setCursor(9, 1);
       lcd.print("turning");
-      if(leftEncTicks<5000){
-      driveTrain.setPower(90,-90);
+
+      driveTrain.setPower(0,180);
+
+      int diff =backLeftUltra.readDistance()-frontLeftUltra.readDistance();
+      if(diff<1&& diff>-1 && leftEncTicks>6000){
+        leftEncTicks=0;
+        state=WALLFOLLOW;
       }
+
       else{
       state=WALLFOLLOW;
     }
@@ -159,31 +190,12 @@ void driveFollow(){
   // lcd.print(gyro);
   // Serial.println(frontUltra.readDistance());
   // Serial.println("in driveFollow()");
-  int avg=0;
-  int savedReads[5];
-  for(int i=1;i<4;i++){
-  savedReads[4-i]=savedReads[4-i-1];
-  }
-  savedReads[0]=frontUltra.readDistance();
-  int sum=0,divider=0;
 
-  for(int i=0;i<5;i++){
-    if (savedReads[i]<30 && savedReads[i]>0){
-      sum+=savedReads[i];
-      divider++;
-    }
-  }
-  if(divider!=0){
-  avg=sum/divider;
-}
-else{
-  avg = 50;//random number that wont trigger anything
-}
   lcd.setCursor(7,0);
-  lcd.print(avg);
+  lcd.print(avg());
 
   //prevent false read
-      if (frontUltra.readDistance()<= 10  ){ //the trig and echo pin need to be set to correct values
+      if ((avg())<= 15  ){ //the trig and echo pin need to be set to correct values
         driveTrain.setPower(0, 0);
 
         lcd.print("front sensed");
@@ -212,8 +224,8 @@ else{
 //This function has the robot follow a wall using the PID
 void followWall(){
   // Serial.println("in followWall()");
-  int baseRightSpeed = 100;
-  int baseLeftSpeed = 100;
+  int baseRightSpeed =150;
+  int baseLeftSpeed = 150;
 
 
   //ping in succession
@@ -224,10 +236,18 @@ void followWall(){
   else{
   backUltraVal = backLeftUltra.readDistance();
 }
-
+  if(!(frontUltraVal<50&&frontUltraVal>0)){//being lazy but some bounds should
+                                                //made to reduce noise
+    frontUltraVal=backUltraVal;
+  }
+  if(!(backUltraVal<50&&backUltraVal>0)){
+    backUltraVal=frontUltraVal;
+  }
   float proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
 
-
+  if (proportionalVal>50){
+    proportionalVal=50;
+  }
   //float proportionalValRight = driveStraightPID.calc(12, frontUltraVal);
   //float proportionalValLeft = driveStraightPID.calc(12, backUltraVal);
 
