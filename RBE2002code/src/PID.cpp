@@ -25,10 +25,18 @@ float PID::calc(int sensorOne, int sensorTwo){
 
     // calculate integral error. Running average is best but hard to implement
     //float average = (error + sum_error)/2;
+
     sum_error += error;
-    if(derivative<0){//if we are getting closer
-      ki=0;
+
+    //TEST THESE____________
+    if (error==0){
+      sum_error=0; //reset so we dont oscillated around the desired point
     }
+    if(derivative<0){//if we are getting closer
+      ki/=5;
+    }
+    //_____________________
+
     double integral = ki * sum_error;
 
 

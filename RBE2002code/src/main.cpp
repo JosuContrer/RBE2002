@@ -249,8 +249,7 @@ void calcXandY(){
 void startOrStop(){
   noInterrupts();
   delayMicroseconds(20);
-
-  interrupts();
+  if(digitalRead(digitalPinToInterrupt(20))){
   switch(startStop){
     case STOPROBOT:
       state = STOP;
@@ -261,8 +260,10 @@ void startOrStop(){
       state = WALLFOLLOW;
       startStop = STOPROBOT;
       break;
-  }
 
+  }
+}
+  interrupts();
 }
 
 
