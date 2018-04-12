@@ -35,7 +35,8 @@ void Motor::setPower(int power) {
 //	if ((millis() - lastSetTime) > 20) {	//prevents from updating the motor too quickly
 		if (power < 0) {
 			digitalWrite(dPin, LOW);
-    }else{
+    }
+    else{
       digitalWrite(dPin, HIGH);
     }
 

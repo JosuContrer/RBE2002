@@ -116,7 +116,7 @@ void loop() {
       lcd.setCursor(9, 1);
       lcd.print("turning");
       if(leftEncTicks<5000){
-      driveTrain.setPower(-90,90);
+      driveTrain.setPower(90,-90);
       }
 
       state=WALLFOLLOW;
