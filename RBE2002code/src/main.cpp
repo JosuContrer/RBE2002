@@ -118,8 +118,9 @@ void loop() {
       if(leftEncTicks<5000){
       driveTrain.setPower(90,-90);
       }
-
+      else{
       state=WALLFOLLOW;
+    }
 
       break;
   }
