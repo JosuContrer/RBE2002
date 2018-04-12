@@ -141,13 +141,15 @@ void driveFollow(){
   // lcd.print(gyro);
   // Serial.println(frontUltra.readDistance());
   // Serial.println("in driveFollow()");
-      // if (frontUltra.readDistance() <= 20){ //the trig and echo pin need to be set to correct values
-      //   driveTrain.setPower(0, 0);
-      //   calcXandY();
-      //   char message[] = "Distance travelled";
-      //   printLCD(x,y,message);
-      //   state = STOP;    //change to new switch case here, will need to turn now
-      // }
+      if (frontUltra.readDistance() <= 10){ //the trig and echo pin need to be set to correct values
+        driveTrain.setPower(0, 0);
+
+        lcd.print("front sensed");
+        // calcXandY();
+        // char message[] = "Distance travelled";
+        // printLCD(x,y,message);
+        state = STOP;    //change to new switch case here, will need to turn now
+      }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
   //   calcXandY();
