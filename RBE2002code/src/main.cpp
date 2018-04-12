@@ -14,7 +14,7 @@
 #include <SPI.h>//not used but needed?
 
 //State diagram control
-enum State {STOP, WALLFOLLOW} state;
+enum State {STOP, WALLFOLLOW,TURN} state;
 enum State2 {STOPROBOT, START} startStop;
 float x;
 float y;
@@ -23,7 +23,7 @@ unsigned long rightEncTicks = 0;
 
 int gyro;
 void gyroVal();
-
+int previousDistance=0;
 // i2c
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
 
@@ -51,6 +51,11 @@ LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
 unsigned int sensors[3];
 
+int frontUltraVal=0;
+int backUltraVal=0;
+
+
+
 void setup() {
   //Fire Sensor
   // pinMode(29,OUTPUT);
@@ -66,8 +71,8 @@ void setup() {
    attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
    pinMode(3, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
-   pinMode(19, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(19), startOrStop, RISING);
+   pinMode(18, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(18), startOrStop, RISING);
 
   setupIMU(); //problem
  //fireSensor.initialize(); //this initializes the fire sensor
@@ -75,7 +80,7 @@ void setup() {
   // // rightMotor.initialize();
    //calibrateLineSensor();
    driveTrain.initialize();
-   driveStraightPID.setpid(5,.1,0);
+   driveStraightPID.setpid(6,.2,0);
 
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -105,6 +110,18 @@ void loop() {
      lcd.print("STOPPED");
     driveTrain.setPower(0, 0);
     break;
+
+    case TURN:
+
+      lcd.setCursor(9, 1);
+      lcd.print("turning");
+      if(leftEncTicks<5000){
+      driveTrain.setPower(-90,90);
+      }
+
+      state=WALLFOLLOW;
+
+      break;
   }
   //----------------------------
 
@@ -141,14 +158,39 @@ void driveFollow(){
   // lcd.print(gyro);
   // Serial.println(frontUltra.readDistance());
   // Serial.println("in driveFollow()");
-      if (frontUltra.readDistance() <= 10){ //the trig and echo pin need to be set to correct values
+  int avg=0;
+  int savedReads[5];
+  for(int i=1;i<4;i++){
+  savedReads[4-i]=savedReads[4-i-1];
+  }
+  savedReads[0]=frontUltra.readDistance();
+  int sum=0,divider=0;
+
+  for(int i=0;i<5;i++){
+    if (savedReads[i]<30 && savedReads[i]>0){
+      sum+=savedReads[i];
+      divider++;
+    }
+  }
+  if(divider!=0){
+  avg=sum/divider;
+}
+else{
+  avg = 50;//random number that wont trigger anything
+}
+  lcd.setCursor(7,0);
+  lcd.print(avg);
+
+  //prevent false read
+      if (frontUltra.readDistance()<= 10  ){ //the trig and echo pin need to be set to correct values
         driveTrain.setPower(0, 0);
 
         lcd.print("front sensed");
         // calcXandY();
         // char message[] = "Distance travelled";
         // printLCD(x,y,message);
-        state = STOP;    //change to new switch case here, will need to turn now
+        leftEncTicks=0;
+        state = TURN;    //change to new switch case here, will need to turn now
       }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
@@ -169,13 +211,21 @@ void driveFollow(){
 //This function has the robot follow a wall using the PID
 void followWall(){
   // Serial.println("in followWall()");
-  int baseRightSpeed = 90;
-  int baseLeftSpeed = 90;
+  int baseRightSpeed = 100;
+  int baseLeftSpeed = 100;
 
-  int frontUltraVal = frontLeftUltra.readDistance();
-  int backUltraVal = backLeftUltra.readDistance();
+
+  //ping in succession
+  int time=millis()%2;
+  if(time == 0){
+  frontUltraVal = frontLeftUltra.readDistance();
+}
+  else{
+  backUltraVal = backLeftUltra.readDistance();
+}
 
   float proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+
 
   //float proportionalValRight = driveStraightPID.calc(12, frontUltraVal);
   //float proportionalValLeft = driveStraightPID.calc(12, backUltraVal);
@@ -207,9 +257,8 @@ void calcXandY(){
 
 void startOrStop(){
   noInterrupts();
-  Serial.println("Inside button interrupt");
-  delayMicroseconds(10);
-  lcd.clear();
+  delayMicroseconds(20);
+
   interrupts();
   switch(startStop){
     case STOPROBOT:

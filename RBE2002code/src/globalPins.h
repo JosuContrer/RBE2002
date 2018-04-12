@@ -5,11 +5,11 @@
 
 //Drive Train
 //Motor(digitalPin,analogPin,isReverse);
-#define DLEFTMOTOR 29
+#define DLEFTMOTOR 28
 #define ALEFTMOTOR 7
 //boolean isMotorLeftReverse = true;
 #define BUTTON 20
-#define DRIGHTMOTOR 28
+#define DRIGHTMOTOR 29
 #define ARIGHTMOTOR 6
 //boolean isMotorRightReverse = false;
 
