@@ -54,32 +54,10 @@ unsigned int sensors[3];
 int frontUltraVal=0;
 int backUltraVal=0;
 
-int avg(){
-  int avg=0;
-  int savedReads[5];
-  for(int i=1;i<4;i++){
-  savedReads[4-i]=savedReads[4-i-1];
-  }
-  savedReads[0]=frontUltra.readDistance();
-  int sum=0,divider=0;
 
-  for(int i=0;i<5;i++){
-    if (savedReads[i]<30 && savedReads[i]>0){
-      sum+=savedReads[i];
-      divider++;
-    }
-  }
-if(divider!=0){
-  avg=sum/divider;
-}
-else{
-  avg = 50;//random number that wont trigger anything
-}
-if(!(avg<40&&avg>0)){
-  avg=50;
-}
-return avg;
-}
+
+
+
 
 void setup() {
   //Fire Sensor
@@ -141,10 +119,10 @@ void loop() {
       lcd.setCursor(9, 1);
       lcd.print("turning");
 
-      driveTrain.setPower(0,180);
+      driveTrain.setPower(0,180); //fix turning in place problem
 
       int diff =backLeftUltra.readDistance()-frontLeftUltra.readDistance();
-      if(diff<1&& diff>-1 && leftEncTicks>6000){
+      if(leftEncTicks>8000){//tweak or put gyro in
         leftEncTicks=0;
         state=WALLFOLLOW;
       }
@@ -192,10 +170,10 @@ void driveFollow(){
   // Serial.println("in driveFollow()");
 
   lcd.setCursor(7,0);
-  lcd.print(avg());
+  lcd.print(frontUltra.avg());
 
   //prevent false read
-      if ((avg())<= 15  ){ //the trig and echo pin need to be set to correct values
+      if (frontUltra.avg()<= 15  ){ //the trig and echo pin need to be set to correct values
         driveTrain.setPower(0, 0);
 
         lcd.print("front sensed");

@@ -4,6 +4,7 @@
 Ultrasonic::Ultrasonic(int trig, int echo){
   trigPin = trig;
   echoPin = echo;
+  savedReads[10];
   initialize();
 }
 
@@ -39,4 +40,30 @@ int Ultrasonic::readDistance(){
   Serial.println(distanceFromWall);
 
   return distanceFromWall;
+}
+int Ultrasonic::avg(){
+  int avg=0;
+
+  for(int i=1;i<9;i++){
+  savedReads[9-i]=savedReads[9-i-1];
+  }
+  savedReads[0]=readDistance();
+  int sum=0,divider=0;
+
+  for(int i=0;i<5;i++){
+    if (savedReads[i]<30 && savedReads[i]>0){
+      sum+=savedReads[i];
+      divider++;
+    }
+  }
+if(divider!=0){
+  avg=sum/divider;
+}
+else{
+  avg = 50;//random number that wont trigger anything
+}
+if(!(avg<40&&avg>0)){
+  avg=50;
+}
+return avg;
 }
