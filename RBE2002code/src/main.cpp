@@ -83,7 +83,7 @@ void setup() {
   // // rightMotor.initialize();
    //calibrateLineSensor();
    driveTrain.initialize();
-   driveStraightPID.setpid(7,.2,0);
+   driveStraightPID.setpid(5,.2,.2);
 
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -121,7 +121,7 @@ void loop() {
 
       driveTrain.setPower(0,180); //fix turning in place problem
 
-      int diff =backLeftUltra.readDistance()-frontLeftUltra.readDistance();
+
       if(leftEncTicks>8000){//tweak or put gyro in
         leftEncTicks=0;
         state=WALLFOLLOW;
@@ -207,25 +207,17 @@ void followWall(){
 
 
   //ping in succession
-  int time=millis()%2;
-  if(time == 0){
-  frontUltraVal = frontLeftUltra.readDistance();
+  int count=micros()%50;
+  if(count == 25){
+  frontUltraVal = frontLeftUltra.avg();
 }
-  else{
-  backUltraVal = backLeftUltra.readDistance();
+  else if(count==0){
+  backUltraVal = backLeftUltra.avg();
 }
-  if(!(frontUltraVal<50&&frontUltraVal>0)){//being lazy but some bounds should
-                                                //made to reduce noise
-    frontUltraVal=backUltraVal;
-  }
-  if(!(backUltraVal<50&&backUltraVal>0)){
-    backUltraVal=frontUltraVal;
-  }
+
   float proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
 
-  if (proportionalVal>50){
-    proportionalVal=50;
-  }
+
   //float proportionalValRight = driveStraightPID.calc(12, frontUltraVal);
   //float proportionalValLeft = driveStraightPID.calc(12, backUltraVal);
 

@@ -26,8 +26,11 @@ float PID::calc(int sensorOne, int sensorTwo){
     // calculate integral error. Running average is best but hard to implement
     //float average = (error + sum_error)/2;
     sum_error += error;
-
+    if(derivative<0){//if we are getting closer
+      ki=0;
+    }
     double integral = ki * sum_error;
+
 
 
     // sum up the error value to send to the motor based off gain values.

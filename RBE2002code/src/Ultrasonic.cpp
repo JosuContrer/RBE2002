@@ -4,7 +4,6 @@
 Ultrasonic::Ultrasonic(int trig, int echo){
   trigPin = trig;
   echoPin = echo;
-  savedReads[10];
   initialize();
 }
 
