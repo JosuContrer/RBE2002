@@ -14,7 +14,7 @@
 #include <SPI.h>//not used but needed?
 
 //State diagram control
-enum State {STOP, WALLFOLLOW,TURN} state;
+enum State {STOP, WALLFOLLOW,TURNRIGHT,TURNLEFT} state;
 enum State2 {STOPROBOT, START} startStop;
 float x;
 float y;
@@ -83,7 +83,7 @@ void setup() {
   // // rightMotor.initialize();
    //calibrateLineSensor();
    driveTrain.initialize();
-   driveStraightPID.setpid(5,.2,.2);
+   driveStraightPID.setpid(5,.2,.02);
 
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -114,15 +114,15 @@ void loop() {
     driveTrain.setPower(0, 0);
     break;
 
-    case TURN:
+    case TURNRIGHT:
 
       lcd.setCursor(9, 1);
       lcd.print("turning");
 
-      driveTrain.setPower(0,180); //fix turning in place problem
+      driveTrain.setPower(180,-180); //fix turning in place problem
 
 
-      if(leftEncTicks>8000){//tweak or put gyro in
+      if(leftEncTicks>4000){//tweak or put gyro in
         leftEncTicks=0;
         state=WALLFOLLOW;
       }
@@ -132,6 +132,15 @@ void loop() {
     }
 
       break;
+      case TURNLEFT:
+        lcd.setCursor(9, 1);
+        lcd.print("turning left");
+
+        driveTrain.setPower(-180,180);
+        if(rightEncTicks>4000){//tweak or put gyro in
+          rightEncTicks=0;
+          state=WALLFOLLOW;
+        }
   }
   //----------------------------
 
@@ -181,7 +190,7 @@ void driveFollow(){
         // char message[] = "Distance travelled";
         // printLCD(x,y,message);
         leftEncTicks=0;
-        state = TURN;    //change to new switch case here, will need to turn now
+        state = TURNRIGHT;    //change to new switch case here, will need to turn now
       }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
@@ -202,13 +211,13 @@ void driveFollow(){
 //This function has the robot follow a wall using the PID
 void followWall(){
   // Serial.println("in followWall()");
-  int baseRightSpeed =150;
-  int baseLeftSpeed = 150;
+  int baseRightSpeed =90;
+  int baseLeftSpeed = 90;
 
 
   //ping in succession
-  int count=micros()%50;
-  if(count == 25){
+  int count=millis()%2;
+  if(count == 1){
   frontUltraVal = frontLeftUltra.avg();
 }
   else if(count==0){
@@ -228,7 +237,10 @@ void followWall(){
   // Serial.println(newLeftSpeed);
   // Serial.print("Right: ");
   // Serial.println(newRightSpeed);
-
+  // if (frontLeftUltra.avg()>=35){
+  //   rightEncTicks=0;
+  //   state=TURNLEFT;
+  // }
   char message[] = "X/Y val";
   printLCD(x, y, message);
 
@@ -249,7 +261,7 @@ void calcXandY(){
 void startOrStop(){
   noInterrupts();
   delayMicroseconds(20);
-  if(digitalRead(digitalPinToInterrupt(20))){
+  interrupts();
   switch(startStop){
     case STOPROBOT:
       state = STOP;
@@ -262,8 +274,8 @@ void startOrStop(){
       break;
 
   }
-}
-  interrupts();
+
+
 }
 
 

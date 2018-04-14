@@ -62,7 +62,7 @@ else{
   avg = 50;//random number that wont trigger anything
 }
 if(!(avg<40&&avg>0)){
-  avg=50;
+  avg=40;
 }
 return avg;
 }
