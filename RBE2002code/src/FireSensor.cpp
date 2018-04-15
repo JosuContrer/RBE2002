@@ -114,3 +114,8 @@ bool FireSensor::isFire(){
 int FireSensor::getz(){
   return Iy[0];
 }
+
+//Return the z value for the fire
+int FireSensor::getx(){
+  return Ix[0];
+}

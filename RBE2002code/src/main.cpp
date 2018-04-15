@@ -12,10 +12,11 @@
 #include <Adafruit_LSM9DS1.h>
 #include <Adafruit_Sensor.h>
 #include <SPI.h>//not used but needed?
-//
 #include <Adafruit_BNO055.h>
-
+#include "States.h"
+#include "MotorStates.h"
 #include <Bounce2.h>
+
 //State diagram control
 enum State {STOP, WALLFOLLOW,TURN} state;
 enum State2 {STOPROBOT, START} startStop;
@@ -67,117 +68,139 @@ int newLeftSpeed;
 int newRightSpeed;
 float gyro;
 
+//Testing
+MotorStates test1;
+
 void drivePID(int pidSel){
   switch(pidSel){
     case WALL:
-      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-      newLeftSpeed = baseLeftSpeed + proportionalVal;
-      newRightSpeed = baseRightSpeed - proportionalVal;
-      driveTrain.setPower(newLeftSpeed, newRightSpeed);
-      break;
+    proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+    newLeftSpeed = baseLeftSpeed + proportionalVal;
+    newRightSpeed = baseRightSpeed - proportionalVal;
+    driveTrain.setPower(newLeftSpeed, newRightSpeed);
+    break;
     case TURNING:
-      proportionalVal = turnPID.calc(desiredGyro, gyro);
-      newLeftSpeed = baseLeftSpeed + proportionalVal;
-      newRightSpeed = baseRightSpeed - proportionalVal;
-      driveTrain.setPower(newLeftSpeed, newRightSpeed);
-      break;
+    proportionalVal = turnPID.calc(desiredGyro, gyro);
+    newLeftSpeed = baseLeftSpeed + proportionalVal;
+    newRightSpeed = baseRightSpeed - proportionalVal;
+    driveTrain.setPower(newLeftSpeed, newRightSpeed);
+    break;
   }
 
 }
 void turn(int turnDir){//so you can just call turn(LEFT)ezpz
   switch(turnDir){
     case LEFT:
-      desiredGyro=gyro-90;
-      state=TURN;
+    desiredGyro=gyro-90;
+    state=TURN;
     case RIGHT:
-      desiredGyro=gyro+90;
-      state=TURN;
+    desiredGyro=gyro+90;
+    state=TURN;
   }
 }
 
 void setup() {
 
+  //----------------------------------
+  //Only for testing purposes
+  //----------------------------------
   // pinMode(29,OUTPUT);
   // pinMode(28,OUTPUT);
   // pinMode(6,OUTPUT);
   // pinMode(7, OUTPUT);
+  // leftMotor.initialize();
+  // rightMotor.initialize();
+  // test1.initialize();
+  // ---------------------------------
+
   state = STOP; //Robot will start being stopped
   //state = WALLFOLLOW;
-
   startStop = START; //Robot will move once button is pushed
 
-   pinMode(2, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
-   pinMode(3, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
-   pinMode(11, INPUT_PULLUP);
-   debouncer.attach(11);
-   debouncer.interval(5);
+  pinMode(2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
+  pinMode(3, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
+  pinMode(11, INPUT_PULLUP);
+  debouncer.attach(11);
+  debouncer.interval(5);
 
   setupIMU(); //problem
   fireSensor.initialize(); //this initializes the fire sensor
-  // // leftMotor.initialize();
-  // // rightMotor.initialize();
-   //calibrateLineSensor();
-   driveTrain.initialize();
-   driveStraightPID.setpid(5,.2,.02);
-   turnPID.setpid(1,.2,.02);
+  //calibrateLineSensor();
+  driveTrain.initialize();
+  driveStraightPID.setpid(5,.2,.02);
+  turnPID.setpid(1,.2,.02);
+
   lcd.begin(16, 2);
   Serial.begin(9600);
-
 }
 
 
 void loop() {
-   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-   gyro = euler.x();
+  //----------------------------------
+  //Only for testing purposes
+  //----------------------------------
+  //In order for testing driving directions
+  //test1.motorDrive(TURNLEFTCENTER);
+  //------------or---------------
+  // digitalWrite(29, LOW);
+  // analogWrite(7,255);
+  // leftMotor.setPower(255);
+  // rightMotor.setPower(255);
+  //-----------or----------------
+  // driveTrain.setPower(0,0);
+  //-----------------------------
+  //Fire Sensor hey tye something
+  //fireSensor.useSensor();
+  //fireSensor.showAll();
+  //-----------------------------
 
 
-
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  gyro = euler.x();
 
   fireSensor.useSensor();
   lcd.setCursor(0,0);
-  lcd.print(fireSensor.Ix[0]);
+  lcd.print(fireSensor.getx());
   lcd.setCursor(0,1);
-  lcd.print(fireSensor.Iy[0]);
+  lcd.print(fireSensor.getz());
 
 
   debouncer.update();
   if(debouncer.risingEdge()){
     switch(startStop){
-        case STOPROBOT:
-          state = STOP;
-          startStop = START;
-          break;
+      case STOPROBOT:
+      state = STOP;
+      startStop = START;
+      break;
 
-        case START:
-          state = WALLFOLLOW;
-          startStop = STOPROBOT;
-          break;
+      case START:
+      state = WALLFOLLOW;
+      startStop = STOPROBOT;
+      break;
 
-      }
+    }
   }
 
-
+  //---------------------
   Serial.println(state);
   //----------Caleb code--------
   switch(state){
     case WALLFOLLOW:
-
-    lcd.setCursor(9, 1);
-    //lcd.print("Start");
-    // Serial.println("in switch case drive");
-    driveFollow();
-    calcXandY();
-    break;
+      lcd.setCursor(9, 1);
+      //lcd.print("Start");
+      // Serial.println("in switch case drive");
+      driveFollow();
+      calcXandY();
+      break;
     case STOP:
-     lcd.setCursor(9, 1);
-     //lcd.print("STOPPED");
-    driveTrain.setPower(0, 0);
-    break;
+      lcd.setCursor(9, 1);
+      //lcd.print("STOPPED");
+      driveTrain.setPower(0, 0);
+      break;
 
     case TURN:
-
       lcd.setCursor(9, 1);
       //lcd.print("turning")
       drivePID(TURN);
@@ -185,32 +208,7 @@ void loop() {
         state=WALLFOLLOW;
       }
       break;
-
   }
-  //----------------------------
-
-  //Fire Sensor hey tye something
-  //fireSensor.useSensor();
-  //fireSensor.showAll();
-  //-----------Works-------------
-  // digitalWrite(29, LOW);
-  // digitalWrite(28, LOW);
-  // analogWrite(7,255);
-  // analogWrite(6,255);
-  // delay(1000);
-  // digitalWrite(29, HIGH);
-  // digitalWrite(28, HIGH);
-  // analogWrite(7,255);
-  // analogWrite(6,255);
-  // delay(1000);
-  //---------------------------
-  //--------Testing------------
-  // leftMotor.setPower(255);
-  // rightMotor.setPower(255);
-  //
-  //driveTrain.setPower(0,0);
-
-
 }
 
 
@@ -227,17 +225,17 @@ void driveFollow(){
   lcd.print(frontUltra.avg());
 
   //prevent false read
-      if (frontUltra.avg()<= 15  ){ //the trig and echo pin need to be set to correct values
-        driveTrain.setPower(0, 0);
+  if (frontUltra.avg()<= 15  ){ //the trig and echo pin need to be set to correct values
+    driveTrain.setPower(0, 0);
 
-        lcd.print("front sensed");
-        // calcXandY();
-        // char message[] = "Distance travelled";
-        // printLCD(x,y,message);
+    lcd.print("front sensed");
+    // calcXandY();
+    // char message[] = "Distance travelled";
+    // printLCD(x,y,message);
 
-        turn(RIGHT);
-        //state = TURNRIGHT;    //change to new switch case here, will need to turn now
-      }
+    turn(RIGHT);
+    //state = TURNRIGHT;    //change to new switch case here, will need to turn now
+  }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
   //   calcXandY();
@@ -248,27 +246,22 @@ void driveFollow(){
   // if(0){ //have this if statement be if flame sensor is triggered
   //
   // }
-
-    followWall();
-
+  followWall();
 }
 
 
 //This function has the robot follow a wall using the PID
 void followWall(){
   // Serial.println("in followWall()");
-
-
-
   //ping in succession
   int count=millis()%2;
   if(count == 1){
-  frontUltraVal = frontLeftUltra.avg();
-}
+    frontUltraVal = frontLeftUltra.avg();
+  }
   else if(count==0){
-  backUltraVal = backLeftUltra.avg();
-}
-drivePID(WALL);
+    backUltraVal = backLeftUltra.avg();
+  }
+  drivePID(WALL);
 
   // leftDrive.setPower(50);
   // Serial.print("Left: ");
@@ -281,8 +274,6 @@ drivePID(WALL);
   // }
   char message[] = "X/Y val";
   //printLCD(x, y, message);
-
-
 }
 
 
@@ -328,7 +319,6 @@ void printLCD(int valOne, int valTwo, char message[]){
 //count left encoder ticks
 void LeftEncoderTicks() {
   leftEncTicks++;
-
 }
 
 //count right encoder ticks
@@ -360,7 +350,6 @@ void calibrateLineSensor() {
 //This sets up the IMU
 void setupIMU()
 {
-
   if(!bno.begin()){
     lcd.print("error");
   }
@@ -375,7 +364,7 @@ void setupIMU()
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_8GAUSS);
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_12GAUSS);
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_16GAUSS);
-bno.setExtCrystalUse(true);
+  bno.setExtCrystalUse(true);
   // 3.) Setup the gyroscope
   //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
   //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);

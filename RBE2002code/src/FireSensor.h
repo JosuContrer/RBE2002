@@ -16,6 +16,7 @@ public:
   void showAll();
   bool isFire();
   int getz();
+  int getx();
 
 private:
   int IRsensorAddress = 0xB0;
