@@ -33,7 +33,7 @@ float PID::calc(int sensorOne, int sensorTwo){
       sum_error=0; //reset so we dont oscillated around the desired point
     }
     if(derivative<0){//if we are getting closer
-      ki/=5;
+      sum_error=0;
     }
     //_____________________
 
