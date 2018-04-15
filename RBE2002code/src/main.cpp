@@ -12,7 +12,9 @@
 #include <Adafruit_LSM9DS1.h>
 #include <Adafruit_Sensor.h>
 #include <SPI.h>//not used but needed?
+//
 
+#include <Bounce2.h>
 //State diagram control
 enum State {STOP, WALLFOLLOW,TURNRIGHT,TURNLEFT} state;
 enum State2 {STOPROBOT, START} startStop;
@@ -20,14 +22,14 @@ float x;
 float y;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
-
+int stop;
 int gyro;
 void gyroVal();
 int previousDistance=0;
 // i2c
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
 
-
+Bounce debouncer = Bounce();
 //Function prototypes
 void driveFollow();
 void followWall();
@@ -59,8 +61,9 @@ int backUltraVal=0;
 
 
 
+
 void setup() {
-  //Fire Sensor
+
   // pinMode(29,OUTPUT);
   // pinMode(28,OUTPUT);
   // pinMode(6,OUTPUT);
@@ -74,8 +77,9 @@ void setup() {
    attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
    pinMode(3, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
-   pinMode(18, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(18), startOrStop, RISING);
+   pinMode(11, INPUT_PULLUP);
+   debouncer.attach(11);
+   debouncer.interval(5);
 
   setupIMU(); //problem
  //fireSensor.initialize(); //this initializes the fire sensor
@@ -90,6 +94,7 @@ void setup() {
 
 }
 
+
 void loop() {
   //lcd.clear();
   //lcd.setCursor(0, 1);
@@ -97,6 +102,23 @@ void loop() {
   //Serial.println("inLoop");
   //gyroVal();
   //lcd.clear();
+  debouncer.update();
+  if(debouncer.risingEdge()){
+    switch(startStop){
+        case STOPROBOT:
+          state = STOP;
+          startStop = START;
+          break;
+
+        case START:
+          state = WALLFOLLOW;
+          startStop = STOPROBOT;
+          break;
+
+      }
+  }
+
+
   Serial.println(state);
   //----------Caleb code--------
   switch(state){
@@ -258,25 +280,23 @@ void calcXandY(){
 }
 
 
-void startOrStop(){
-  noInterrupts();
-  delayMicroseconds(20);
-  interrupts();
-  switch(startStop){
-    case STOPROBOT:
-      state = STOP;
-      startStop = START;
-      break;
-
-    case START:
-      state = WALLFOLLOW;
-      startStop = STOPROBOT;
-      break;
-
-  }
-
-
-}
+// void startOrStop(){
+//   noInterrupts();
+//   delayMicroseconds(20);
+//   interrupts();
+//   switch(startStop){
+//     case STOPROBOT:
+//       state = STOP;
+//       startStop = START;
+//       break;
+//
+//     case START:
+//       state = WALLFOLLOW;
+//       startStop = STOPROBOT;
+//       break;
+//
+//   }
+// }
 
 
 void printLCD(int valOne, int valTwo, char message[]){
