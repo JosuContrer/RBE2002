@@ -98,3 +98,19 @@ void FireSensor::showAll(){
    Serial.println("");
    delay(15);
 }
+
+//Return true if the fire sensor is triggered
+bool FireSensor::isFire(){
+  if((Ix[0]>1000) && (Iy[0] >1000)){
+    Serial.print("Fire Seen");
+    seen = true;
+  }else{
+    seen = false;
+  }
+  return seen;
+}
+
+//Return the z value for the fire
+int FireSensor::getz(){
+  return Iy[0];
+}
