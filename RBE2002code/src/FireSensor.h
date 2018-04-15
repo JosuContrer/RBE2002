@@ -1,5 +1,5 @@
-#ifndef FireSensor_h
-#define FireSensor_h
+#ifndef FIRESENSOR_h
+#define FIRESENSOR_h
 
 #include "Arduino.h"
 
@@ -14,6 +14,8 @@ public:
   void Write_2bytes(byte,byte);
   void useSensor();
   void showAll();
+  bool isFire();
+  int getz();
 
 private:
   int IRsensorAddress = 0xB0;
@@ -27,5 +29,6 @@ private:
   int Ix[4];
   int Iy[4];
   int s;
+  bool seen;
 };
 #endif
