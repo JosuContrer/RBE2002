@@ -13,22 +13,26 @@
 #include <Adafruit_Sensor.h>
 #include <SPI.h>//not used but needed?
 //
+#include <Adafruit_BNO055.h>
 
 #include <Bounce2.h>
 //State diagram control
-enum State {STOP, WALLFOLLOW,TURNRIGHT,TURNLEFT} state;
+enum State {STOP, WALLFOLLOW,TURN} state;
 enum State2 {STOPROBOT, START} startStop;
+enum pidSelect {WALL,TURNING} pidSel;
+enum turner {LEFT,RIGHT} turnDir;
 float x;
 float y;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
 int stop;
-int gyro;
+int desiredGyro;
 void gyroVal();
 int previousDistance=0;
 // i2c
-Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
-
+Adafruit_BNO055 bno = Adafruit_BNO055();
+int baseRightSpeed =90;
+int baseLeftSpeed = 90;
 Bounce debouncer = Bounce();
 //Function prototypes
 void driveFollow();
@@ -40,7 +44,8 @@ void RightEncoderTicks();
 void startOrStop();
 void calibrateLineSensor();
 void setupIMU();
-
+void turn();
+void drivePID();
 
 //Object Creation
 FireSensor fireSensor;
@@ -49,6 +54,7 @@ Ultrasonic backLeftUltra(BACKLEFTULTRATRIG, BACKLEFTULTRAECHO);
 Ultrasonic frontLeftUltra(FRONTLEFTULTRATRIG, FRONTLEFTULTRAECHO);
 Ultrasonic frontUltra(FRONTULTRATRIG, FRONTULTRAECHO);
 PID driveStraightPID;
+PID turnPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
 unsigned int sensors[3];
@@ -56,11 +62,38 @@ unsigned int sensors[3];
 int frontUltraVal=0;
 int backUltraVal=0;
 
+float proportionalVal;
+int newLeftSpeed;
+int newRightSpeed;
+float gyro;
 
+void drivePID(int pidSel){
+  switch(pidSel){
+    case WALL:
+      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+      newLeftSpeed = baseLeftSpeed + proportionalVal;
+      newRightSpeed = baseRightSpeed - proportionalVal;
+      driveTrain.setPower(newLeftSpeed, newRightSpeed);
+      break;
+    case TURNING:
+      proportionalVal = turnPID.calc(desiredGyro, gyro);
+      newLeftSpeed = baseLeftSpeed + proportionalVal;
+      newRightSpeed = baseRightSpeed - proportionalVal;
+      driveTrain.setPower(newLeftSpeed, newRightSpeed);
+      break;
+  }
 
-
-
-
+}
+void turn(int turnDir){//so you can just call turn(LEFT)ezpz
+  switch(turnDir){
+    case LEFT:
+      desiredGyro=gyro-90;
+      state=TURN;
+    case RIGHT:
+      desiredGyro=gyro+90;
+      state=TURN;
+  }
+}
 
 void setup() {
 
@@ -82,13 +115,13 @@ void setup() {
    debouncer.interval(5);
 
   setupIMU(); //problem
- //fireSensor.initialize(); //this initializes the fire sensor
+  fireSensor.initialize(); //this initializes the fire sensor
   // // leftMotor.initialize();
   // // rightMotor.initialize();
    //calibrateLineSensor();
    driveTrain.initialize();
    driveStraightPID.setpid(5,.2,.02);
-
+   turnPID.setpid(1,.2,.02);
   lcd.begin(16, 2);
   Serial.begin(9600);
 
@@ -96,12 +129,19 @@ void setup() {
 
 
 void loop() {
-  //lcd.clear();
-  //lcd.setCursor(0, 1);
-  //lcd.print("inLoop");
-  //Serial.println("inLoop");
-  //gyroVal();
-  //lcd.clear();
+   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+   gyro = euler.x();
+
+
+
+
+  fireSensor.useSensor();
+  lcd.setCursor(0,0);
+  lcd.print(fireSensor.Ix[0]);
+  lcd.setCursor(0,1);
+  lcd.print(fireSensor.Iy[0]);
+
+
   debouncer.update();
   if(debouncer.risingEdge()){
     switch(startStop){
@@ -125,44 +165,27 @@ void loop() {
     case WALLFOLLOW:
 
     lcd.setCursor(9, 1);
-    lcd.print("Start");
+    //lcd.print("Start");
     // Serial.println("in switch case drive");
     driveFollow();
     calcXandY();
     break;
     case STOP:
      lcd.setCursor(9, 1);
-     lcd.print("STOPPED");
+     //lcd.print("STOPPED");
     driveTrain.setPower(0, 0);
     break;
 
-    case TURNRIGHT:
+    case TURN:
 
       lcd.setCursor(9, 1);
-      lcd.print("turning");
-
-      driveTrain.setPower(180,-180); //fix turning in place problem
-
-
-      if(leftEncTicks>4000){//tweak or put gyro in
-        leftEncTicks=0;
+      //lcd.print("turning")
+      drivePID(TURN);
+      if(gyro>desiredGyro){//tweak or put gyro in
         state=WALLFOLLOW;
       }
-
-      else{
-      state=WALLFOLLOW;
-    }
-
       break;
-      case TURNLEFT:
-        lcd.setCursor(9, 1);
-        lcd.print("turning left");
 
-        driveTrain.setPower(-180,180);
-        if(rightEncTicks>4000){//tweak or put gyro in
-          rightEncTicks=0;
-          state=WALLFOLLOW;
-        }
   }
   //----------------------------
 
@@ -211,8 +234,9 @@ void driveFollow(){
         // calcXandY();
         // char message[] = "Distance travelled";
         // printLCD(x,y,message);
-        leftEncTicks=0;
-        state = TURNRIGHT;    //change to new switch case here, will need to turn now
+
+        turn(RIGHT);
+        //state = TURNRIGHT;    //change to new switch case here, will need to turn now
       }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
@@ -233,8 +257,7 @@ void driveFollow(){
 //This function has the robot follow a wall using the PID
 void followWall(){
   // Serial.println("in followWall()");
-  int baseRightSpeed =90;
-  int baseLeftSpeed = 90;
+
 
 
   //ping in succession
@@ -245,15 +268,8 @@ void followWall(){
   else if(count==0){
   backUltraVal = backLeftUltra.avg();
 }
+drivePID(WALL);
 
-  float proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-
-
-  //float proportionalValRight = driveStraightPID.calc(12, frontUltraVal);
-  //float proportionalValLeft = driveStraightPID.calc(12, backUltraVal);
-
-  int newLeftSpeed = baseLeftSpeed + proportionalVal;
-  int newRightSpeed = baseRightSpeed - proportionalVal;
   // leftDrive.setPower(50);
   // Serial.print("Left: ");
   // Serial.println(newLeftSpeed);
@@ -264,9 +280,9 @@ void followWall(){
   //   state=TURNLEFT;
   // }
   char message[] = "X/Y val";
-  printLCD(x, y, message);
+  //printLCD(x, y, message);
 
-  driveTrain.setPower(newLeftSpeed, newRightSpeed);
+
 }
 
 
@@ -345,45 +361,23 @@ void calibrateLineSensor() {
 void setupIMU()
 {
 
-  if(!lsm.begin()){
+  if(!bno.begin()){
     lcd.print("error");
   }
   // 1.) Set the accelerometer range
-  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
   //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
   //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
   //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
 
   // 2.) Set the magnetometer sensitivity
-  lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
+  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_8GAUSS);
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_12GAUSS);
   //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_16GAUSS);
-
+bno.setExtCrystalUse(true);
   // 3.) Setup the gyroscope
-  lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
+  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
   //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);
   //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
-}
-
-void gyroVal(){
-  lsm.read();  /* ask it to read in the data */
-  //Serial.print("gyro");
-  /* Get a new sensor event */
-  sensors_event_t a, m, g, temp;
-
-  lsm.getEvent(&a, &m, &g, &temp);
-
-  // Serial.print("Accel X: "); Serial.print(a.acceleration.x); Serial.print(" m/s^2");
-  // Serial.print("\tY: "); Serial.print(a.acceleration.y);     Serial.print(" m/s^2 ");
-  // Serial.print("\tZ: "); Serial.print(a.acceleration.z);     Serial.println(" m/s^2 ");
-  //
-  // Serial.print("Mag X: "); Serial.print(m.magnetic.x);   Serial.print(" gauss");
-  // Serial.print("\tY: "); Serial.print(m.magnetic.y);     Serial.print(" gauss");
-  // Serial.print("\tZ: "); Serial.print(m.magnetic.z);     Serial.println(" gauss");
-  //
-  // Serial.print("Gyro X: "); Serial.print(g.gyro.x);   Serial.print(" dps");
-  // Serial.print("\tY: "); Serial.print(g.gyro.y);      Serial.print(" dps");
-  // Serial.print("\tZ: "); Serial.print(g.gyro.z);      Serial.println(" dps");
-  gyro= g.gyro.z;
 }
