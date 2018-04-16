@@ -101,7 +101,7 @@ void FireSensor::showAll(){
 
 //Return true if the fire sensor is triggered
 bool FireSensor::isFire(){
-  if((Ix[0]>1000) && (Iy[0] >1000)){
+  if((Ix[0]>1023) && (Iy[0] >1023)){
     Serial.print("Fire Seen");
     seen = true;
   }else{

@@ -32,8 +32,8 @@ void gyroVal();
 int previousDistance=0;
 // i2c
 Adafruit_BNO055 bno = Adafruit_BNO055();
-int baseRightSpeed =90;
-int baseLeftSpeed = 90;
+int baseRightSpeed =120;
+int baseLeftSpeed = 120;
 Bounce debouncer = Bounce();
 //Function prototypes
 void driveFollow();
@@ -92,9 +92,15 @@ void turn(int turnDir){//so you can just call turn(LEFT)ezpz
   switch(turnDir){
     case LEFT:
     desiredGyro=gyro-90;
+    if (desiredGyro<0){
+      desiredGyro+=360;
+    }
     state=TURN;
     case RIGHT:
     desiredGyro=gyro+90;
+    if (desiredGyro>360){
+      desiredGyro-=360;
+    }
     state=TURN;
   }
 }
@@ -129,7 +135,7 @@ void setup() {
   fireSensor.initialize(); //this initializes the fire sensor
   //calibrateLineSensor();
   driveTrain.initialize();
-  driveStraightPID.setpid(5,.2,.02);
+  driveStraightPID.setpid(7,.1,.02);
   turnPID.setpid(1,.2,.02);
 
   lcd.begin(16, 2);
@@ -161,10 +167,12 @@ void loop() {
   gyro = euler.x();
 
   fireSensor.useSensor();
-  lcd.setCursor(0,0);
-  lcd.print(fireSensor.getx());
-  lcd.setCursor(0,1);
-  lcd.print(fireSensor.getz());
+   lcd.setCursor(0,0);
+   lcd.print(frontUltraVal);
+  // lcd.print(fireSensor.getx());
+   lcd.setCursor(0,1);
+   lcd.print(backUltraVal);
+  // lcd.print(fireSensor.getz());
 
 
   debouncer.update();
@@ -204,7 +212,7 @@ void loop() {
       lcd.setCursor(9, 1);
       //lcd.print("turning")
       drivePID(TURN);
-      if(gyro>desiredGyro){//tweak or put gyro in
+      if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
         state=WALLFOLLOW;
       }
       break;
@@ -272,7 +280,7 @@ void followWall(){
   //   rightEncTicks=0;
   //   state=TURNLEFT;
   // }
-  char message[] = "X/Y val";
+//  char message[] = "X/Y val";
   //printLCD(x, y, message);
 }
 
