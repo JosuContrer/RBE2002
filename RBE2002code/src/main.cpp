@@ -23,7 +23,7 @@
 #define baseRightSpeed_120 120
 
 //State diagram control
-enum State {STOP, WALLFOLLOW,TURN} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -60,6 +60,7 @@ drive driveTrain;
 Ultrasonic backLeftUltra(BACKLEFTULTRATRIG, BACKLEFTULTRAECHO);
 Ultrasonic frontLeftUltra(FRONTLEFTULTRATRIG, FRONTLEFTULTRAECHO);
 Ultrasonic frontUltra(FRONTULTRATRIG, FRONTULTRAECHO);
+Ultrasonic sideUltra(SIDEULTRATRIG, SIDEULTRAECHO);
 PID driveStraightPID;
 PID turnPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
@@ -213,6 +214,12 @@ void loop() {
         state=WALLFOLLOW;
       }
       break;
+
+    case FLAME:
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("Flame is in front");
+      break;
   }
 }
 
@@ -247,9 +254,11 @@ void driveFollow(){
   //   printLCD(x,y,message);
   //   //change to new switch case here, will need to turn now
   // }
-  // if(0){ //have this if statement be if flame sensor is triggered
-  //
-  // }
+  if(fireSensor.isFire()){ //have this if statement be if flame sensor is triggered
+    if(sideUltra.readDistance() < 10){
+      state = FLAME;
+    }
+  }
   followWall();
 }
 

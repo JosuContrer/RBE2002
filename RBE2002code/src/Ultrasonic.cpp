@@ -40,6 +40,8 @@ int Ultrasonic::readDistance(){
 
   return distanceFromWall;
 }
+
+
 int Ultrasonic::avg(){
   int avg=0;
 
@@ -59,10 +61,10 @@ if(divider!=0){
   avg=sum/divider;
 }
 else{
-  avg = readDistance();//
+  avg = 50;//random number that wont trigger anything
 }
-if(!(avg<60&&avg>0)){
-  avg=readDistance();//if not a num or something weird
+if(!(avg<40&&avg>0)){
+  avg=40;
 }
 return avg;
 }
