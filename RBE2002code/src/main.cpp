@@ -16,6 +16,11 @@
 #include "States.h"
 #include "MotorStates.h"
 #include <Bounce2.h>
+#include "Fan.h"
+
+//CONSTANTS
+#define baseLeftSpeed_120 120
+#define baseRightSpeed_120 120
 
 //State diagram control
 enum State {STOP, WALLFOLLOW,TURN} state;
@@ -28,12 +33,11 @@ unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
 int stop;
 int desiredGyro;
-void gyroVal();
 int previousDistance=0;
 // i2c
 Adafruit_BNO055 bno = Adafruit_BNO055();
-int baseRightSpeed =120;
-int baseLeftSpeed = 120;
+int baseRightSpeed =baseRightSpeed_120;
+int baseLeftSpeed = baseLeftSpeed_120;
 Bounce debouncer = Bounce();
 //Function prototypes
 void driveFollow();
@@ -47,6 +51,8 @@ void calibrateLineSensor();
 void setupIMU();
 void turn();
 void drivePID();
+void gyroVal();
+
 
 //Object Creation
 FireSensor fireSensor;
@@ -124,6 +130,7 @@ void setup() {
   driveStraightPID.setpid(7,.1,.02);
   turnPID.setpid(1,.2,.02);
 
+  fanInitialize();
   lcd.begin(16, 2);
   Serial.begin(9600);
 }
@@ -227,12 +234,11 @@ void driveFollow(){
     driveTrain.setPower(0, 0);
 
     lcd.print("front sensed");
-    // calcXandY();
-    // char message[] = "Distance travelled";
-    // printLCD(x,y,message);
+    calcXandY();
+    char message[] = "Distance travelled";
+    printLCD(x,y,message);
 
-    turn(RIGHT);
-    //state = TURNRIGHT;    //change to new switch case here, will need to turn now
+    turn(RIGHT);   //Inside this function, state is changed to turn
   }
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
@@ -252,6 +258,8 @@ void driveFollow(){
 void followWall(){
   // Serial.println("in followWall()");
   //ping in succession
+  baseRightSpeed =baseRightSpeed_120;
+  baseLeftSpeed = baseLeftSpeed_120;
   int count=millis()%2;
   if(count == 1){
     frontUltraVal = frontLeftUltra.avg();

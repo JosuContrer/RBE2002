@@ -31,5 +31,6 @@
 #define addrCalibratedMinimumOn 0
 #define addrCalibratedMaximumOn 100
 
+#define FANPIN 28
 
 #endif
