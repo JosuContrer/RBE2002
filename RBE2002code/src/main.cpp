@@ -71,32 +71,18 @@ float gyro;
 //Testing
 MotorStates test1;
 
-void drivePID(int pidSel){
-  switch(pidSel){
-    case WALL:
-    proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-    newLeftSpeed = baseLeftSpeed + proportionalVal;
-    newRightSpeed = baseRightSpeed - proportionalVal;
-    driveTrain.setPower(newLeftSpeed, newRightSpeed);
-    break;
-    case TURNING:
-    proportionalVal = turnPID.calc(desiredGyro, gyro);
-    newLeftSpeed = baseLeftSpeed + proportionalVal;
-    newRightSpeed = baseRightSpeed - proportionalVal;
-    driveTrain.setPower(newLeftSpeed, newRightSpeed);
-    break;
-  }
 
-}
 void turn(int turnDir){//so you can just call turn(LEFT)ezpz
   switch(turnDir){
     case LEFT:
+    baseLeftSpeed=-90;
     desiredGyro=gyro-90;
     if (desiredGyro<0){
       desiredGyro+=360;
     }
     state=TURN;
     case RIGHT:
+    baseRightSpeed=-90;
     desiredGyro=gyro+90;
     if (desiredGyro>360){
       desiredGyro-=360;
@@ -211,7 +197,11 @@ void loop() {
     case TURN:
       lcd.setCursor(9, 1);
       //lcd.print("turning")
-      drivePID(TURN);
+
+      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+      newLeftSpeed = baseLeftSpeed + proportionalVal;
+      newRightSpeed = baseRightSpeed - proportionalVal;
+      driveTrain.setPower(newLeftSpeed, newRightSpeed);
       if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
         state=WALLFOLLOW;
       }
@@ -269,7 +259,10 @@ void followWall(){
   else if(count==0){
     backUltraVal = backLeftUltra.avg();
   }
-  drivePID(WALL);
+  proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+  newLeftSpeed = baseLeftSpeed + proportionalVal;
+  newRightSpeed = baseRightSpeed - proportionalVal;
+  driveTrain.setPower(newLeftSpeed, newRightSpeed);
 
   // leftDrive.setPower(50);
   // Serial.print("Left: ");
