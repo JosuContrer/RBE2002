@@ -1,17 +1,16 @@
 #include <Arduino.h>
 #include "FireSensor.h"
-//#include "Motor.h"
 #include "drive.h"
 #include "Ultrasonic.h"
 #include "globalPins.h"
 #include "PID.h"
 #include <LiquidCrystal.h>
-#include "QTRSensors.h"  //not sure why this is coming up as an error
+#include "QTRSensors.h"
 #include "EEPROMex.h"
 #include <Wire.h>
 #include <Adafruit_LSM9DS1.h>
 #include <Adafruit_Sensor.h>
-#include <SPI.h>//not used but needed?
+#include <SPI.h>
 #include <Adafruit_BNO055.h>
 #include "States.h"
 #include "MotorStates.h"
@@ -38,12 +37,15 @@ unsigned long rightEncTicks = 0;
 int stop;
 int desiredGyro;
 int previousDistance=0;
-// i2c
-Adafruit_BNO055 bno = Adafruit_BNO055();
 int baseRightSpeed =baseRightSpeed_120;
 int baseLeftSpeed = baseLeftSpeed_120;
-Bounce debouncer = Bounce();
-extern Servo fanServo;
+unsigned int sensors[3];
+int frontUltraVal=0;
+int backUltraVal=0;
+float proportionalVal;
+int newLeftSpeed;
+int newRightSpeed;
+float gyro;
 bool returnHome;
 
 //Function prototypes
@@ -76,36 +78,27 @@ PID turnPID;
 PID centerFlameXPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
-unsigned int sensors[3];
-
-int frontUltraVal=0;
-int backUltraVal=0;
-
-float proportionalVal;
-int newLeftSpeed;
-int newRightSpeed;
-float gyro;
-
-//Testing
-MotorStates test1;
+Bounce debouncer = Bounce();
+Adafruit_BNO055 bno = Adafruit_BNO055();
+extern Servo fanServo;
 
 
 void turn(int turnDir){//so you can just call turn(LEFT)ezpz
   switch(turnDir){
     case LEFT:
-    baseLeftSpeed=-90;
-    desiredGyro=gyro-90;
-    if (desiredGyro<0){
-      desiredGyro+=360;
-    }
-    state=TURN;
+      baseLeftSpeed=-90;
+      desiredGyro=gyro-90;
+      if (desiredGyro<0){
+        desiredGyro+=360;
+      }
+      state=TURN;
     case RIGHT:
-    baseRightSpeed=-90;
-    desiredGyro=gyro+90;
-    if (desiredGyro>360){
-      desiredGyro-=360;
-    }
-    state=TURN;
+      baseRightSpeed=-90;
+      desiredGyro=gyro+90;
+      if (desiredGyro>360){
+        desiredGyro-=360;
+      }
+      state=TURN;
   }
 }
 
@@ -202,7 +195,7 @@ void loop() {
       state = STOP;
       displayXYZ(); //print to screen coordinates of candle
     }
-    
+
   }
 
   //---------------------
@@ -414,8 +407,6 @@ void calibrateLineSensor() {
   delay(1000);
 }
 
-
-//This sets up the IMU
 void setupIMU()
 {
   if(!bno.begin()){
