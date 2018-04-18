@@ -2,8 +2,12 @@
 #ifndef PID_H_
 #define PID_H_
 
-class PID {
 
+/************************************************
+ * Class for implementing PID control algorithm *
+ ************************************************/
+
+class PID {
 public:
   PID();
   float kp;
@@ -11,15 +15,8 @@ public:
   float kd;
   float last_error = 0;
   float sum_error =0;
-  //set PID constants
-  void setpid(float P, float I, float D);
-  //calculate the output control signal
-  float calc(int, int);
-
-private:
-
+  void setpid(float P, float I, float D); //set PID constants
+  float calc(int, int);  //calculate the output control signal
 };
-
-
 
 #endif

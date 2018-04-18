@@ -8,6 +8,11 @@
 #include "globalPins.h"
 #include "Motor.h"
 
+
+/**********************************************
+ * Use this for testing out motor controllers *
+ **********************************************/
+
 class MotorStates{
 public:
   MotorStates();
@@ -17,7 +22,5 @@ public:
 
 private:
   drive driveTrain;
-  //Motor leftMotor(DRIGHTMOTOR,ARIGHTMOTOR,false);
-  //LiquidCrystal lcd2(40, 41, 42, 43, 44, 45);
 };
 #endif

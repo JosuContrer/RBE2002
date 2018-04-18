@@ -2,11 +2,12 @@
 #include "globalPins.h"
 #include <Arduino.h>
 
-/**Constructor for Motor
- *
- * @param int digitalPin Digital Pin for the motor
- * @param int analogPin Analog Pin for the motor
- * @param boolean reversed True id the motor is reversed, otherwise false
+
+/**
+ * Constructor for the motor
+ * @param digitalPin Digital pin for the motor
+ * @param analogPin  Analog pin for the motor
+ * @param reversed   True if the motor is reversed, otherwise false
  */
 Motor::Motor(int digitalPin, int analogPin, boolean reversed){
   dPin = digitalPin;
@@ -14,7 +15,9 @@ Motor::Motor(int digitalPin, int analogPin, boolean reversed){
   isReversed = reversed;
 }
 
-/**Initliaizes the digital and analog pins as outputs for the motor
+
+/**
+ * Initializes the digital and analog pins as outputs for the motor
  */
 void Motor::initialize() {
   pinMode(dPin,OUTPUT);
@@ -22,27 +25,22 @@ void Motor::initialize() {
 	setPower(0);
 }
 
-/**Sets the power to the motors
- *
- * @param int power from -255 to 255
+
+/**
+ * Sets the motor power
+ * @param power -255 to 255, negative makes go in reverse
  */
-void Motor::setPower(int power) {
+ void Motor::setPower(int power) {
 
-  //Inverts the motor direction if true
-  if(isReversed == true){
-    power = -1*power;
-  }
-
-	//if ((millis() - lastSetTime) > 20) {	//prevents from updating the motor too quickly
-		if (power < 0) {
-      //Serial.println("INNN BACKWARDS MODEEEEE");
-			digitalWrite(dPin, LOW);
-    }
-    else{
-      digitalWrite(dPin, HIGH);
-    }
-
-    analogWrite(aPin, abs(power));
-	   //lastSetTime = millis();
-	//}
-}
+   //Inverts the motor direction if true
+   if(isReversed == true){
+     power = -1*power;
+   }
+   if (power < 0) {
+     digitalWrite(dPin, LOW); //set in reverse direction
+   }
+   else{
+     digitalWrite(dPin, HIGH); //set in forwards direction
+   }
+   analogWrite(aPin, abs(power)); //write PWM signal to motr
+ }

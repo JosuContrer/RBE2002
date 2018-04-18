@@ -1,7 +1,14 @@
 #ifndef STATES_H
 #define STATES_H
-/**This header file is for enums of states for state machine
-*/
+
+/*************************************
+ * Enums of states for state machine *
+ *************************************/
+
+/******************************************
+ * NOTE:                                  *
+ * This file is not currently implemented *
+ ******************************************/
 
 typedef enum {
   STOP2,

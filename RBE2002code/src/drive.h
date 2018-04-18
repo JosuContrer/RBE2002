@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include "Motor.h"
 
+/**********************************
+ * Drive class to control motors  *
+ **********************************/
 
 class drive {
 public:

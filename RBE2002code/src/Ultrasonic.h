@@ -1,5 +1,10 @@
 #include <Arduino.h>
 
+
+/********************************
+ * Class to control ultrasonics *
+ ********************************/
+
 class Ultrasonic {
 public:
 	Ultrasonic(int trigPin, int echoPin);

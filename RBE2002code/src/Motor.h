@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include "Servo.h"
 
+/************************
+ * Class for the motors *
+ ************************/
 
 class Motor {
 public:

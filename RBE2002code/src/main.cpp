@@ -13,17 +13,22 @@
 #include <SPI.h>
 #include <Adafruit_BNO055.h>
 #include "States.h"
-#include "MotorStates.h"
 #include <Bounce2.h>
 #include "Fan.h"
 
-//CONSTANTS
+
+//////////////
+//CONSTANTS //
+//////////////
 #define baseLeftSpeed_120 120
 #define baseRightSpeed_120 120
-#define OFFSET_HEIGHT 6 //This is the number of inches the flame sensor is off the ground
-#define CENTERVAL_X 100 //Position of flame sensor so at center of x range
+#define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
+#define CENTERVAL_X 100 //TODO: Position of flame sensor so at center of x range
 
-//State diagram control
+
+//////////////////////////
+//State diagram control //
+//////////////////////////
 enum State {STOP, WALLFOLLOW,TURN, FLAME} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
@@ -48,7 +53,10 @@ int newRightSpeed;
 float gyro;
 bool returnHome;
 
-//Function prototypes
+
+////////////////////////
+//Function prototypes //
+////////////////////////
 void driveFollow();
 void followWall();
 void printLCD(int, int, char[]);
@@ -58,7 +66,7 @@ void RightEncoderTicks();
 void startOrStop();
 void calibrateLineSensor();
 void setupIMU();
-void turn();
+void turnInitialize(int);
 void drivePID();
 void gyroVal();
 void calculateHeight();
@@ -66,7 +74,10 @@ void displayXYZ();
 void saveValues();
 void centerFlameX();
 
-//Object Creation
+
+////////////////////
+//Object Creation //
+////////////////////
 FireSensor fireSensor;
 drive driveTrain;
 Ultrasonic backLeftUltra(BACKLEFTULTRATRIG, BACKLEFTULTRAECHO);
@@ -83,7 +94,131 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 extern Servo fanServo;
 
 
-void turn(int turnDir){//so you can just call turn(LEFT)ezpz
+//////////////////////
+//Arduino Functions //
+//////////////////////
+void setup() {
+  state = STOP; //Robot will start being stopped
+  startStop = START; //Robot will move once button is pushed
+
+  returnHome = false; //Not currently returning returning home
+
+  //Interrupts
+  pinMode(2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
+  pinMode(3, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
+  pinMode(11, INPUT_PULLUP);
+
+  //Debouncer
+  debouncer.attach(11);
+  debouncer.interval(5);
+
+  //Initialize all classes
+  setupIMU();
+  fireSensor.initialize();
+  //calibrateLineSensor(); //TODO: Record values into memory
+  fanInitialize();
+
+  //PIDs
+  driveTrain.initialize();
+  driveStraightPID.setpid(7,.1,.02); //PID to drive straight
+  turnPID.setpid(1,.2,.02); //PID for turning
+  centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
+
+  //Displays
+  lcd.begin(16, 2);
+  Serial.begin(9600);
+}
+
+
+void loop() {
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
+  gyro = euler.x(); //x value of IMU
+
+  fireSensor.useSensor(); //save flame sensor values to array
+
+  //Emergency start/stop button
+  debouncer.update();
+  if(debouncer.risingEdge()){
+    switch(startStop){
+      case STOPROBOT:
+        state = STOP; //stop robot
+        startStop = START; //set so next time button is pressed, robot starts
+        break;
+
+      case START:
+        state = WALLFOLLOW; //start robot
+        startStop = STOPROBOT; //set so next time button is pressed, robot stops
+        break;
+    }
+  }
+
+  //REVIEW:
+  if(returnHome){
+    if(x < 3 && y < 3){  // as the robot gets closer to the original starting position,
+                         // x and y should get closer to 0, at this point, want to stop robot
+      state = STOP;
+      displayXYZ(); //print to screen coordinates of candle
+    }
+
+  }
+
+  //Main flow control
+  switch(state){
+    case WALLFOLLOW:
+      driveFollow();
+      break;
+
+    case STOP:
+      driveTrain.setPower(0, 0);
+      break;
+
+    case TURN: //REVIEW:
+
+      /******************************************************************************
+       * IDEA                                                                       *
+       * Turning should have its own PID, and it should not be based on ultrasonics *
+       ******************************************************************************/
+      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+      newLeftSpeed = baseLeftSpeed + proportionalVal;
+      newRightSpeed = baseRightSpeed - proportionalVal;
+      driveTrain.setPower(newLeftSpeed, newRightSpeed);
+      if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
+        state=WALLFOLLOW;
+      }
+      break;
+
+    case FLAME: //REVIEW:
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("Flame is in front");
+      /**********************************************/
+      fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
+      /**********************************************/
+      centerFlameX(); //move flame sensor to be at center of flame in x direction
+      /**********************************************/
+      calculateHeight(); //determine height of candle
+      /**********************************************/
+      fireSensor.blowOutCandle(); //extinguish the candle
+      saveValues(); //save x, y, and z values (will change when robot returns home)
+      returnHome = true; //use to have robot stop when returns to (0.0) posiion
+      state = WALLFOLLOW; //have robot continue driving home
+      break;
+  }
+}
+
+
+//////////////
+//Functions //
+//////////////
+
+//REVIEW:
+/**
+ * Initializes values for turning
+ * @param turnDir 1 for right, 0 for left
+ */
+void turnInitialize(int turnDir){
   switch(turnDir){
     case LEFT:
       baseLeftSpeed=-90;
@@ -102,171 +237,26 @@ void turn(int turnDir){//so you can just call turn(LEFT)ezpz
   }
 }
 
-void setup() {
 
-  //----------------------------------
-  //Only for testing purposes
-  //----------------------------------
-  // pinMode(29,OUTPUT);
-  // pinMode(28,OUTPUT);
-  // pinMode(6,OUTPUT);
-  // pinMode(7, OUTPUT);
-  // leftMotor.initialize();
-  // rightMotor.initialize();
-  // test1.initialize();
-  // ---------------------------------
-
-  state = STOP; //Robot will start being stopped
-  //state = WALLFOLLOW;
-  startStop = START; //Robot will move once button is pushed
-
-  returnHome = false;
-  pinMode(2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
-  pinMode(3, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(3), RightEncoderTicks, CHANGE);
-  pinMode(11, INPUT_PULLUP);
-  debouncer.attach(11);
-  debouncer.interval(5);
-
-  setupIMU(); //problem
-  fireSensor.initialize(); //this initializes the fire sensor
-  //calibrateLineSensor();
-  driveTrain.initialize();
-  driveStraightPID.setpid(7,.1,.02);
-  turnPID.setpid(1,.2,.02);
-  centerFlameXPID.setpid(1, .2, .02);
-  fanInitialize();
-  lcd.begin(16, 2);
-  Serial.begin(9600);
-}
-
-
-void loop() {
-  //----------------------------------
-  //Only for testing purposes
-  //----------------------------------
-  //In order for testing driving directions
-  //test1.motorDrive(TURNLEFTCENTER);
-  //------------or---------------
-  // digitalWrite(29, LOW);
-  // analogWrite(7,255);
-  // leftMotor.setPower(255);
-  // rightMotor.setPower(255);
-  //-----------or----------------
-  // driveTrain.setPower(0,0);
-  //-----------------------------
-  //Fire Sensor hey tye something
-  //fireSensor.useSensor();
-  //fireSensor.showAll();
-  //-----------------------------
-
-
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  gyro = euler.x();
-
-  fireSensor.useSensor();
-   lcd.setCursor(0,0);
-   lcd.print(frontUltraVal);
-  // lcd.print(fireSensor.getx());
-   lcd.setCursor(0,1);
-   lcd.print(backUltraVal);
-  // lcd.print(fireSensor.getz());
-
-
-  debouncer.update();
-  if(debouncer.risingEdge()){
-    switch(startStop){
-      case STOPROBOT:
-      state = STOP;
-      startStop = START;
-      break;
-
-      case START:
-      state = WALLFOLLOW;
-      startStop = STOPROBOT;
-      break;
-
-    }
-  }
-  if(returnHome){
-    if(x < 3 && y < 3){  //as the robot gets closer to the original starting position,
-                        //x and y should get closer to 0, at this point, want to stop robot
-      state = STOP;
-      displayXYZ(); //print to screen coordinates of candle
-    }
-
-  }
-
-  //---------------------
-  Serial.println(state);
-  //----------Caleb code--------
-  switch(state){
-    case WALLFOLLOW:
-      lcd.setCursor(9, 1);
-      //lcd.print("Start");
-      // Serial.println("in switch case drive");
-      driveFollow();
-      calcXandY();
-      break;
-    case STOP:
-      lcd.setCursor(9, 1);
-      //lcd.print("STOPPED");
-      driveTrain.setPower(0, 0);
-      break;
-
-    case TURN:
-      lcd.setCursor(9, 1);
-      //lcd.print("turning")
-
-      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-      newLeftSpeed = baseLeftSpeed + proportionalVal;
-      newRightSpeed = baseRightSpeed - proportionalVal;
-      driveTrain.setPower(newLeftSpeed, newRightSpeed);
-      if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
-        state=WALLFOLLOW;
-      }
-      break;
-
-    case FLAME:
-      lcd.clear();
-      lcd.setCursor(0, 1);
-      lcd.print("Flame is in front");
-      fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
-      centerFlameX(); //move flame sensor to be at center of flame in x direction
-      calculateHeight(); //determine height of candle
-      fireSensor.blowOutCandle(); //extinguish the candle
-      saveValues(); //save x, y, and z values (will change when robot returns home)
-      returnHome = true; //use to have robot stop when returns to (0.0) posiion
-      state = WALLFOLLOW; //have robot continue driving home
-      break;
-  }
-}
-
-
-//This function is the state level control for driving
+/**
+ * Driving control
+ */
 void driveFollow(){
-  // lcd.clear();
-  // lcd.print("inDrive");
-  // lcd.setCursor(0,1);
-  // lcd.print(gyro);
-  // Serial.println(frontUltra.readDistance());
-  // Serial.println("in driveFollow()");
 
-  lcd.setCursor(7,0);
-  lcd.print(frontUltra.avg());
+  //If front ultrasonic triggered (wall in front)
+  if (frontUltra.avg()<= 15  ){
+    driveTrain.setPower(0, 0); //Stop robot
+    calcXandY(); //Calculate x and y
 
-  //prevent false read
-  if (frontUltra.avg()<= 15  ){ //the trig and echo pin need to be set to correct values
-    driveTrain.setPower(0, 0);
-
-    lcd.print("front sensed");
-    calcXandY();
+    //FOR TESTING: Print x and y value
     char message[] = "Distance travelled";
     printLCD(x,y,message);
 
-    turn(RIGHT);   //Inside this function, state is changed to turn
+    turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
+
+  //TODO: Test out line sensor code/values
+  //If line sensor triggered
   // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
   //   driveTrain.setPower(0, 0);
   //   calcXandY();
@@ -274,8 +264,10 @@ void driveFollow(){
   //   printLCD(x,y,message);
   //   //change to new switch case here, will need to turn now
   // }
-  if(fireSensor.isFire()){ //have this if statement be if flame sensor is triggered
-    if(sideUltra.readDistance() < 10){
+
+  //If flame sensor senses fire
+  if(fireSensor.isFire()){
+    if(sideUltra.readDistance() < 10){ //TODO: Test value to see distance for flame
       state = FLAME;
     }
   }
@@ -283,12 +275,17 @@ void driveFollow(){
 }
 
 
-//This function has the robot follow a wall using the PID
+/**
+ * Robot follows wall using PID between two ultrasonics
+ * NOTE: Does not include set distance from wall
+ */
 void followWall(){
-  // Serial.println("in followWall()");
-  //ping in succession
+
+  //set base speeds
   baseRightSpeed =baseRightSpeed_120;
   baseLeftSpeed = baseLeftSpeed_120;
+
+  //ping ultrasonics in succession
   int count=millis()%2;
   if(count == 1){
     frontUltraVal = frontLeftUltra.avg();
@@ -296,40 +293,46 @@ void followWall(){
   else if(count==0){
     backUltraVal = backLeftUltra.avg();
   }
+
+  //PID control
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
   newLeftSpeed = baseLeftSpeed + proportionalVal;
   newRightSpeed = baseRightSpeed - proportionalVal;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
-
-  // leftDrive.setPower(50);
-  // Serial.print("Left: ");
-  // Serial.println(newLeftSpeed);
-  // Serial.print("Right: ");
-  // Serial.println(newRightSpeed);
-  // if (frontLeftUltra.avg()>=35){
-  //   rightEncTicks=0;
-  //   state=TURNLEFT;
-  // }
-//  char message[] = "X/Y val";
-  //printLCD(x, y, message);
 }
 
 
+/**
+ * Calculates the x and y position of the robot
+ */
+/****************************************************
+ * Math:                                            *
+ * 2.75 in diam 5.5pi circumfrence, 17.28in/revesre *
+ * 800 counts per rev for rising edge single channel*
+ *          1/800 *17.28 * 1/3                      *
+ ****************************************************/
 void calcXandY(){
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + (temp *.0072*2);// * cos(gyro);   //TODO BOTH OF THESE VALUES NEED TO BE CHANGED
-  y = y + (temp *.0072*2);// * sin(gyro);   // 2.75 in diam 5.5pi circumfrence, 17.28in/revesr
+  x = x + (temp *.0072*2);// * cos(gyro);   //TODO: Add back in gyro code
+  y = y + (temp *.0072*2);// * sin(gyro);
   leftEncTicks=0;
   rightEncTicks=0;
-  //800 counts per rev for rising edge single channel 1/800 *17.28 * 1/3
 }
 
+
+/**
+ * Calculate height of flame
+ */
 void calculateHeight(){
   int theta = fanServo.read();  //determine angle of servo, may need to offset this value depending on how servo is mounted
   int distanceToFlame = sideUltra.readDistance(); //use ultrasonic to get distance to flame
   z = tan(theta)*distanceToFlame + OFFSET_HEIGHT; //TODO: Set OFFSET_HEIGHT to be height of flame sensor off the ground
 }
 
+
+/**
+ * ISR for Button
+ */
 // void startOrStop(){
 //   noInterrupts();
 //   delayMicroseconds(20);
@@ -349,6 +352,12 @@ void calculateHeight(){
 // }
 
 
+/**
+ * Print two values and message to LCD
+ * @param valOne  First value to be printed
+ * @param valTwo  Second value to be printed
+ * @param message Message to be printed
+ */
 void printLCD(int valOne, int valTwo, char message[]){
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -359,6 +368,10 @@ void printLCD(int valOne, int valTwo, char message[]){
   lcd.print(message);
 }
 
+
+/**
+ * Display x, y, and z values on LCD
+ */
 void displayXYZ(){
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -372,22 +385,35 @@ void displayXYZ(){
   lcd.print(saveZ);
 }
 
+
+/**
+ * Record x, y, and z values
+ */
 void saveValues(){
   saveX = x;
   saveY = y;
   saveZ = z;
 }
-//count left encoder ticks
+
+
+/**
+ * ISR for left encoder ticks
+ */
 void LeftEncoderTicks() {
   leftEncTicks++;
 }
 
-//count right encoder ticks
+/**
+ * ISR for right encoder ticks
+ */
 void RightEncoderTicks() {
   rightEncTicks++;
 }
 
 
+/**
+ * Calibrate line sensor by reading in values from EEPROM memory
+ */
 void calibrateLineSensor() {
   Serial.println("Calibrating....");
   delay(500);
@@ -397,7 +423,6 @@ void calibrateLineSensor() {
   digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
 
   qtraSix.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
-  //qtrrc.calibrate();
   EEPROM.readBlock<unsigned int>(addrCalibratedMinimumOn, qtraSix.calibratedMinimumOn, 8);
   EEPROM.readBlock<unsigned int>(addrCalibratedMaximumOn, qtraSix.calibratedMaximumOn, 8);
 
@@ -407,6 +432,9 @@ void calibrateLineSensor() {
   delay(1000);
 }
 
+/**
+ * Initialize IMU
+ */
 void setupIMU()
 {
   if(!bno.begin()){
@@ -415,8 +443,11 @@ void setupIMU()
   bno.setExtCrystalUse(true);
 }
 
+/**
+ * Center flame in x direction
+ */
 void centerFlameX(){
-  int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx());
+  int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
   int newSpeed = baseLeftSpeed + centerXError;
   driveTrain.setPower(newLeftSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
 }
