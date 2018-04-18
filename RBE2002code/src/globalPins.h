@@ -20,10 +20,10 @@
 #define FRONTLEFTULTRAECHO 25
 
 #define FRONTULTRATRIG 10
-#define FRONTULTRAECHO 9 
+#define FRONTULTRAECHO 9
 
-#define SIDEULTRATRIG 0 //NEED TO CHANGE
-#define SIDEULTRAECHO 0 //NEED TO CHANGE
+#define SIDEULTRATRIG 0 //TODO NEED TO CHANGE
+#define SIDEULTRAECHO 0 //TODO NEED TO CHANGE
 
 //FOR LINE FOLLOWER
 #define NUM_SENSORS             6 // number of sensors used
@@ -33,5 +33,8 @@
 #define addrCalibratedMaximumOn 100
 
 #define FANPIN 28
+
+#define FANSERVOPIN 0 //TODO NEED TO CHANGE
+
 
 #endif
