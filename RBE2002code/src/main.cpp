@@ -22,6 +22,8 @@
 #define baseLeftSpeed_120 120
 #define baseRightSpeed_120 120
 #define OFFSET_HEIGHT 6 //This is the number of inches the flame sensor is off the ground
+#define CENTERVAL_X 100 //Position of flame sensor so at center of x range
+
 //State diagram control
 enum State {STOP, WALLFOLLOW,TURN, FLAME} state;
 enum State2 {STOPROBOT, START} startStop;
@@ -60,6 +62,7 @@ void gyroVal();
 void calculateHeight();
 void displayXYZ();
 void saveValues();
+void centerFlameX();
 
 //Object Creation
 FireSensor fireSensor;
@@ -70,6 +73,7 @@ Ultrasonic frontUltra(FRONTULTRATRIG, FRONTULTRAECHO);
 Ultrasonic sideUltra(SIDEULTRATRIG, SIDEULTRAECHO);
 PID driveStraightPID;
 PID turnPID;
+PID centerFlameXPID;
 LiquidCrystal lcd(40, 41, 42, 43, 44, 45);
 QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_SAMPLES_PER_SENSOR, EMITTER_PIN);
 unsigned int sensors[3];
@@ -138,7 +142,7 @@ void setup() {
   driveTrain.initialize();
   driveStraightPID.setpid(7,.1,.02);
   turnPID.setpid(1,.2,.02);
-
+  centerFlameXPID.setpid(1, .2, .02);
   fanInitialize();
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -196,8 +200,9 @@ void loop() {
     if(x < 3 && y < 3){  //as the robot gets closer to the original starting position,
                         //x and y should get closer to 0, at this point, want to stop robot
       state = STOP;
+      displayXYZ(); //print to screen coordinates of candle
     }
-    displayXYZ(); //print to screen coordinates of candle
+    
   }
 
   //---------------------
@@ -234,7 +239,8 @@ void loop() {
       lcd.clear();
       lcd.setCursor(0, 1);
       lcd.print("Flame is in front");
-      fireSensor.centerHeight();  //move flame sensor to be at center of flame
+      fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
+      centerFlameX(); //move flame sensor to be at center of flame in x direction
       calculateHeight(); //determine height of candle
       fireSensor.blowOutCandle(); //extinguish the candle
       saveValues(); //save x, y, and z values (will change when robot returns home)
@@ -415,20 +421,11 @@ void setupIMU()
   if(!bno.begin()){
     lcd.print("error");
   }
-  // 1.) Set the accelerometer range
-  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
-  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
-  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
-  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
-
-  // 2.) Set the magnetometer sensitivity
-  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
-  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_8GAUSS);
-  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_12GAUSS);
-  //lsm.setupMag(lsm.LSM9DS1_MAGGAIN_16GAUSS);
   bno.setExtCrystalUse(true);
-  // 3.) Setup the gyroscope
-  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
-  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);
-  //lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
+}
+
+void centerFlameX(){
+  int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx());
+  int newSpeed = baseLeftSpeed + centerXError;
+  driveTrain.setPower(newLeftSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
 }
