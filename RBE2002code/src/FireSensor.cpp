@@ -1,7 +1,16 @@
 #include "FireSensor.h"
 #include <Arduino.h>
 #include <Wire.h>
+#include <Servo.h>
+#include "PID.h"
 
+
+#define STARTVAL 90  //where Servo normally starts
+#define CENTER_VAL 90 //Where the flame is centered according to the sensor
+
+//Global Variables
+extern Servo fanServo;
+PID centerFan;
 //Constructor
 FireSensor::FireSensor(){}
 
@@ -30,6 +39,7 @@ void FireSensor::initialize(){
   Write_2bytes(0x1A,0x40); delay(10);
   Write_2bytes(0x33,0x33); delay(10);
   delay(100);
+  centerFan.setpid(1,.2,.02);    //create PID to center the flame in the center
 }
 
 //Method that saves and array of x and y from the sensor reading
@@ -118,4 +128,14 @@ int FireSensor::getz(){
 //Return the z value for the fire
 int FireSensor::getx(){
   return Ix[0];
+}
+
+//move servo so flame is centered with servo
+void FireSensor::center(){
+  // static int i = STARTVAL;      //TODO: Change this to be appropriate starting value
+  // if(getz() < CENTER_VAL){
+  //   fanServo.write(++i);
+  // }
+  int fanError = centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
+  fanServo.write(STARTVAL + fanError); //add error to initial starting position
 }
