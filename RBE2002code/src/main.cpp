@@ -21,7 +21,7 @@
 //CONSTANTS
 #define baseLeftSpeed_120 120
 #define baseRightSpeed_120 120
-
+#define OFFSET_HEIGHT 6 //This is the number of inches the flame sensor is off the ground
 //State diagram control
 enum State {STOP, WALLFOLLOW,TURN, FLAME} state;
 enum State2 {STOPROBOT, START} startStop;
@@ -29,6 +29,7 @@ enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
 float x;
 float y;
+float z;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
 int stop;
@@ -39,6 +40,8 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 int baseRightSpeed =baseRightSpeed_120;
 int baseLeftSpeed = baseLeftSpeed_120;
 Bounce debouncer = Bounce();
+extern Servo fanServo;
+
 //Function prototypes
 void driveFollow();
 void followWall();
@@ -304,6 +307,11 @@ void calcXandY(){
   //800 counts per rev for rising edge single channel 1/800 *17.28 * 1/3
 }
 
+void calculateHeight(){
+  int theta = fanServo.read();  //determine angle of servo, may need to offset this value depending on how servo is mounted
+  int distanceToFlame = sideUltra.readDistance(); //use ultrasonic to get distance to flame
+  z = tan(theta)*distanceToFlame + OFFSET_HEIGHT; //TODO: Set OFFSET_HEIGHT to be height of flame sensor off the ground
+}
 
 // void startOrStop(){
 //   noInterrupts();
