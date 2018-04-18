@@ -30,6 +30,7 @@ enum turner {LEFT,RIGHT} turnDir;
 float x;
 float y;
 float z;
+float saveX, saveY, saveZ;
 unsigned long leftEncTicks = 0;
 unsigned long rightEncTicks = 0;
 int stop;
@@ -41,6 +42,7 @@ int baseRightSpeed =baseRightSpeed_120;
 int baseLeftSpeed = baseLeftSpeed_120;
 Bounce debouncer = Bounce();
 extern Servo fanServo;
+bool returnHome;
 
 //Function prototypes
 void driveFollow();
@@ -55,7 +57,9 @@ void setupIMU();
 void turn();
 void drivePID();
 void gyroVal();
-
+void calculateHeight();
+void displayXYZ();
+void saveValues();
 
 //Object Creation
 FireSensor fireSensor;
@@ -119,6 +123,7 @@ void setup() {
   //state = WALLFOLLOW;
   startStop = START; //Robot will move once button is pushed
 
+  returnHome = false;
   pinMode(2, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(2), LeftEncoderTicks, CHANGE);
   pinMode(3, INPUT_PULLUP);
@@ -187,6 +192,13 @@ void loop() {
 
     }
   }
+  if(returnHome){
+    if(x < 3 && y < 3){  //as the robot gets closer to the original starting position,
+                        //x and y should get closer to 0, at this point, want to stop robot
+      state = STOP;
+    }
+    displayXYZ(); //print to screen coordinates of candle
+  }
 
   //---------------------
   Serial.println(state);
@@ -222,6 +234,12 @@ void loop() {
       lcd.clear();
       lcd.setCursor(0, 1);
       lcd.print("Flame is in front");
+      fireSensor.centerHeight();  //move flame sensor to be at center of flame
+      calculateHeight(); //determine height of candle
+      fireSensor.blowOutCandle(); //extinguish the candle
+      saveValues(); //save x, y, and z values (will change when robot returns home)
+      returnHome = true; //use to have robot stop when returns to (0.0) posiion
+      state = WALLFOLLOW; //have robot continue driving home
       break;
   }
 }
@@ -342,6 +360,24 @@ void printLCD(int valOne, int valTwo, char message[]){
   lcd.print(message);
 }
 
+void displayXYZ(){
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("X Val: ");
+  lcd.print(saveX);
+  lcd.print("   ");
+  lcd.print("Y Val: ");
+  lcd.print(saveY);
+  lcd.setCursor(0, 1);
+  lcd.print("Z Val: ");
+  lcd.print(saveZ);
+}
+
+void saveValues(){
+  saveX = x;
+  saveY = y;
+  saveZ = z;
+}
 //count left encoder ticks
 void LeftEncoderTicks() {
   leftEncTicks++;
