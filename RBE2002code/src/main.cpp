@@ -15,6 +15,7 @@
 #include "States.h"
 #include <Bounce2.h>
 #include "Fan.h"
+#include "MotorStates.h"
 
 
 //////////////
@@ -23,7 +24,7 @@
 #define baseLeftSpeed_120 120
 #define baseRightSpeed_120 120
 #define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
-#define CENTERVAL_X 100 //TODO: Position of flame sensor so at center of x range
+#define CENTERVAL_X 511.5 //TODO: Position of flame sensor so at center of x range
 
 
 //////////////////////////
@@ -52,7 +53,7 @@ int newLeftSpeed;
 int newRightSpeed;
 float gyro;
 bool returnHome;
-
+//MotorStates testMotor;
 
 ////////////////////////
 //Function prototypes //
@@ -94,6 +95,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 extern Servo fanServo;
 
 
+
 //////////////////////
 //Arduino Functions //
 //////////////////////
@@ -133,6 +135,7 @@ void setup() {
 
 
 void loop() {
+ //testMotor.motorDrive(TURNRIGHTCENTER);
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
 
@@ -168,6 +171,9 @@ void loop() {
   switch(state){
     case WALLFOLLOW:
       driveFollow();
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("WALLFOLLOWING");
       break;
 
     case STOP:
@@ -176,17 +182,31 @@ void loop() {
 
     case TURN: //REVIEW:
 
+      driveTrain.setPower(0,0);
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("DELAY ONE");
+      delay(2000);
       /******************************************************************************
        * IDEA                                                                       *
        * Turning should have its own PID, and it should not be based on ultrasonics *
        ******************************************************************************/
-      proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
+      proportionalVal = turnPID.calc(desiredGyro, gyro);
       newLeftSpeed = baseLeftSpeed + proportionalVal;
       newRightSpeed = baseRightSpeed - proportionalVal;
       driveTrain.setPower(newLeftSpeed, newRightSpeed);
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("TURNING");
       if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
         state=WALLFOLLOW;
       }
+      driveTrain.setPower(0,0);
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("DELAY TWO");
+      delay(2000);
+      //while(1);
       break;
 
     case FLAME: //REVIEW:
@@ -227,6 +247,7 @@ void turnInitialize(int turnDir){
         desiredGyro+=360;
       }
       state=TURN;
+      break;
     case RIGHT:
       baseRightSpeed=-90;
       desiredGyro=gyro+90;
@@ -234,6 +255,7 @@ void turnInitialize(int turnDir){
         desiredGyro-=360;
       }
       state=TURN;
+      break;
   }
 }
 
@@ -246,6 +268,9 @@ void driveFollow(){
   //If front ultrasonic triggered (wall in front)
   if (frontUltra.avg()<= 15  ){
     driveTrain.setPower(0, 0); //Stop robot
+    lcd.clear();          //COMBAK: Remove this, for testing
+    lcd.setCursor(0, 0);
+    lcd.print("FRONT ULTRA TRIGGERED");
     calcXandY(); //Calculate x and y
 
     //FOR TESTING: Print x and y value
@@ -267,7 +292,7 @@ void driveFollow(){
 
   //If flame sensor senses fire
   if(fireSensor.isFire()){
-    if(sideUltra.readDistance() < 10){ //TODO: Test value to see distance for flame
+    if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
       state = FLAME;
     }
   }
@@ -294,6 +319,17 @@ void followWall(){
     backUltraVal = backLeftUltra.avg();
   }
 
+    /////////////
+    // TESTING //
+    /////////////
+    /////////////
+  // Serial.print("Left: ");
+  // Serial.println(frontUltraVal);
+  // Serial.print("Right: ");
+  // Serial.println(backUltraVal);
+
+
+
   //PID control
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
   newLeftSpeed = baseLeftSpeed + proportionalVal;
@@ -313,10 +349,11 @@ void followWall(){
  ****************************************************/
 void calcXandY(){
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + (temp *.0072*2);// * cos(gyro);   //TODO: Add back in gyro code
-  y = y + (temp *.0072*2);// * sin(gyro);
+  x = x + (temp *.0072*2) * cos(gyro);   //REVIEW: Add back in gyro code
+  y = y + (temp *.0072*2) * sin(gyro);
   leftEncTicks=0;
   rightEncTicks=0;
+  //TODO: For final distance, must use ultrasonic to get distance from robot to candle
 }
 
 
