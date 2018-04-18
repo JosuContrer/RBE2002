@@ -17,7 +17,8 @@ public:
   bool isFire();
   int getz();
   int getx();
-  void center();
+  void centerHeight();
+  void blowOutCandle();
 
 private:
   int IRsensorAddress = 0xB0;

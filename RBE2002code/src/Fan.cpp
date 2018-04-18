@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-
 Servo fanServo; //If want access to servo in other file, must declare as extern
 
 void fanInitialize(){

@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include "PID.h"
+#include "Fan.h"
 
 
 #define STARTVAL 90  //where Servo normally starts
@@ -131,11 +132,28 @@ int FireSensor::getx(){
 }
 
 //move servo so flame is centered with servo
-void FireSensor::center(){
+void FireSensor::centerHeight(){
   // static int i = STARTVAL;      //TODO: Change this to be appropriate starting value
   // if(getz() < CENTER_VAL){
   //   fanServo.write(++i);
   // }
   int fanError = centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
   fanServo.write(STARTVAL + fanError); //add error to initial starting position
+}
+
+void FireSensor::blowOutCandle(){
+  if(isFire()){
+    fanState(ON);
+  }
+  //have fan oscillate up and down in order to be sure to extinguish flame
+//WARNING:
+      //This code is set to go from 0 to 180, but the range of the servo is probably less
+      //Do NOT run this code until the range is determined, otherwise the servo will try and go the
+      //full 180 degrees and make either stall the servo or break something on the robot
+  for(int i = 0; i < 180; i++){
+    fanServo.write(i);
+  }
+  for(i = 180; i > 0; i--){
+    fanServo.write(i);
+  }
 }
