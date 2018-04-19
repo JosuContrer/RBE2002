@@ -125,7 +125,7 @@ void setup() {
   //PIDs
   driveTrain.initialize();
   driveStraightPID.setpid(7,.1,.02); //PID to drive straight
-  turnPID.setpid(1,.2,.02); //PID for turning
+  turnPID.setpid(4,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
 
   //Displays
@@ -174,6 +174,10 @@ void loop() {
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("WALLFOLLOWING");
+      lcd.setCursor(1,1 );
+      lcd.print(frontUltraVal);
+      lcd.setCursor(10, 1);
+      lcd.print(backUltraVal);
       break;
 
     case STOP:
@@ -191,9 +195,11 @@ void loop() {
        * IDEA                                                                       *
        * Turning should have its own PID, and it should not be based on ultrasonics *
        ******************************************************************************/
+
+
       proportionalVal = turnPID.calc(desiredGyro, gyro);
-      newLeftSpeed = baseLeftSpeed + proportionalVal;
-      newRightSpeed = baseRightSpeed - proportionalVal;
+      newLeftSpeed = baseLeftSpeed - proportionalVal;
+      newRightSpeed = baseRightSpeed + proportionalVal;
       driveTrain.setPower(newLeftSpeed, newRightSpeed);
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -266,19 +272,19 @@ void turnInitialize(int turnDir){
 void driveFollow(){
 
   //If front ultrasonic triggered (wall in front)
-  if (frontUltra.avg()<= 15  ){
-    driveTrain.setPower(0, 0); //Stop robot
-    lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(0, 0);
-    lcd.print("FRONT ULTRA TRIGGERED");
-    calcXandY(); //Calculate x and y
-
-    //FOR TESTING: Print x and y value
-    char message[] = "Distance travelled";
-    printLCD(x,y,message);
-
-    turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
-  }
+  // if (frontUltra.avg()<12){
+  //   driveTrain.setPower(0, 0); //Stop robot
+  //   lcd.clear();          //COMBAK: Remove this, for testing
+  //   lcd.setCursor(0, 0);
+  //   lcd.print("FRONT ULTRA TRIGGERED");
+  //   calcXandY(); //Calculate x and y
+  //
+  //   //FOR TESTING: Print x and y value
+  //   char message[] = "Distance travelled";
+  //   printLCD(x,y,message);
+  //
+  //   turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
+  // }
 
   //TODO: Test out line sensor code/values
   //If line sensor triggered
@@ -332,8 +338,8 @@ void followWall(){
 
   //PID control
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-  newLeftSpeed = baseLeftSpeed + proportionalVal;
-  newRightSpeed = baseRightSpeed - proportionalVal;
+  newLeftSpeed = baseLeftSpeed - proportionalVal;
+  newRightSpeed = baseRightSpeed + proportionalVal;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 

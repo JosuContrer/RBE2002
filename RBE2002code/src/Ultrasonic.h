@@ -12,6 +12,7 @@ public:
 	int readDistance();
 	int avg();
 
+
 private:
   int trigPin;
   int echoPin;

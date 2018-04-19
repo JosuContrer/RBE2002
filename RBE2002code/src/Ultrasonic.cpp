@@ -81,13 +81,14 @@ int Ultrasonic::readDistance(){
    }
 
    else{
-     avg = 50;//random number that wont trigger anything
+     avg = readDistance();//random number that wont trigger anything
    }
 
    //Wrap protection
    if(!(avg<40&&avg>0)){
      avg=40;
    }
-   
+
    return avg;
  }
+ 
