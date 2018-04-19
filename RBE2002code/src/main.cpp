@@ -26,6 +26,11 @@
 #define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
 #define CENTERVAL_X 511.5 //TODO: Position of flame sensor so at center of x range
 
+/////////////////////
+//GLOBAL VARIABLES //
+/////////////////////
+bool blowing = false; //For Flame state in order to know if the candle is out or not
+
 
 //////////////////////////
 //State diagram control //
@@ -73,7 +78,7 @@ void gyroVal();
 void calculateHeight();
 void displayXYZ();
 void saveValues();
-void centerFlameX();
+bool centerFlameX();
 
 
 ////////////////////
@@ -217,19 +222,30 @@ void loop() {
       lcd.clear();
       lcd.setCursor(0, 1);
       lcd.print("Flame is in front");
-      /**********************************************/
-      fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
-      /**********************************************/
-      centerFlameX(); //move flame sensor to be at center of flame in x direction
-      /**********************************************/
-      calculateHeight(); //determine height of candle
-      /**********************************************/
-      fireSensor.blowOutCandle(); //extinguish the candle
-      saveValues(); //save x, y, and z values (will change when robot returns home)
-      returnHome = true; //use to have robot stop when returns to (0.0) posiion
-      state = WALLFOLLOW; //have robot continue driving home
+      bool hVal;
+      bool xVal;
+
+      if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
+        /**********************************************/
+        hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
+        /**********************************************/
+        xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
+        /**********************************************/
+        calculateHeight(); //determine height of candle
+        saveValues(); //save x, y, and z values (will change when robot returns home)
+        /**********************************************/
+      }
+      if(hVal && xVal){
+        if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
+          fireSensor.blowOutCandle(); //extinguish the candle
+          blowing = true;
+        }else{
+          returnHome = true; //use to have robot stop when returns to (0.0) posiion
+          state = WALLFOLLOW; //have robot continue driving home
+        }
+      }
       break;
-  }
+    }
 }
 
 
@@ -491,8 +507,13 @@ void setupIMU()
 /**
  * Center flame in x direction
  */
-void centerFlameX(){
+bool centerFlameX(){
   int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
   int newSpeed = baseLeftSpeed + centerXError;
   driveTrain.setPower(newLeftSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
+  if(centerXError == 0){
+    return true;
+  }else{
+    return false;
+  }
 }
