@@ -21,8 +21,8 @@
 //////////////
 //CONSTANTS //
 //////////////
-#define baseLeftSpeed_120 120
-#define baseRightSpeed_120 120
+#define baseLeftSpeed_120 150
+#define baseRightSpeed_120 150
 #define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
 #define CENTERVAL_X 511.5 //TODO: Position of flame sensor so at center of x range
 
@@ -124,8 +124,8 @@ void setup() {
 
   //PIDs
   driveTrain.initialize();
-  driveStraightPID.setpid(7,.1,.02); //PID to drive straight
-  turnPID.setpid(4,.2,.02); //PID for turning
+  driveStraightPID.setpid(30,.1,.02); //PID to drive straight
+  turnPID.setpid(10,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
 
   //Displays
@@ -174,10 +174,7 @@ void loop() {
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("WALLFOLLOWING");
-      lcd.setCursor(1,1 );
-      lcd.print(frontUltraVal);
-      lcd.setCursor(10, 1);
-      lcd.print(backUltraVal);
+
       break;
 
     case STOP:
@@ -185,34 +182,35 @@ void loop() {
       break;
 
     case TURN: //REVIEW:
-
-      driveTrain.setPower(0,0);
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("DELAY ONE");
-      delay(2000);
       /******************************************************************************
        * IDEA                                                                       *
        * Turning should have its own PID, and it should not be based on ultrasonics *
        ******************************************************************************/
 
-
-      proportionalVal = turnPID.calc(desiredGyro, gyro);
+      gyro = (int) euler.x();
+      proportionalVal = turnPID.calc(gyro, desiredGyro);
       newLeftSpeed = baseLeftSpeed - proportionalVal;
       newRightSpeed = baseRightSpeed + proportionalVal;
       driveTrain.setPower(newLeftSpeed, newRightSpeed);
-      lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("TURNING");
-      if(abs(gyro-desiredGyro)<=4){//tweak or put gyro in
+      lcd.setCursor(0, 1);
+      lcd.print(gyro);
+      lcd.setCursor(10, 1);
+      lcd.print(desiredGyro);
+      lcd.setCursor(10, 0);
+      lcd.print(abs(desiredGyro - gyro));
+
+      Serial.print("Gyro: ");
+      Serial.println(gyro);
+      Serial.print("desiredGyro: ");
+      Serial.println(desiredGyro);
+      Serial.print("Difference: ");
+      Serial.println(abs(gyro - desiredGyro));
+
+      if(proportionalVal<0){
         state=WALLFOLLOW;
       }
-      driveTrain.setPower(0,0);
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("DELAY TWO");
-      delay(2000);
-      //while(1);
       break;
 
     case FLAME: //REVIEW:
@@ -245,21 +243,22 @@ void loop() {
  * @param turnDir 1 for right, 0 for left
  */
 void turnInitialize(int turnDir){
+  baseLeftSpeed=0;
+  baseRightSpeed=0;
   switch(turnDir){
     case LEFT:
-      baseLeftSpeed=-90;
-      desiredGyro=gyro-90;
-      if (desiredGyro<0){
-        desiredGyro+=360;
-      }
+      desiredGyro=(int) gyro - 90 % 360;
+      // if(desiredGyro > 360s){
+      //   desiredGyro =((int)gyro+90)-360;
+      //
+      // }
       state=TURN;
       break;
     case RIGHT:
-      baseRightSpeed=-90;
-      desiredGyro=gyro+90;
-      if (desiredGyro>360){
-        desiredGyro-=360;
-      }
+      desiredGyro=((int)gyro + 90)% 360;
+      // if(desiredGyro > 360){
+      //   desiredGyro =((int)gyro+90)-360;
+      // }
       state=TURN;
       break;
   }
@@ -272,19 +271,20 @@ void turnInitialize(int turnDir){
 void driveFollow(){
 
   //If front ultrasonic triggered (wall in front)
-  // if (frontUltra.avg()<12){
-  //   driveTrain.setPower(0, 0); //Stop robot
-  //   lcd.clear();          //COMBAK: Remove this, for testing
-  //   lcd.setCursor(0, 0);
-  //   lcd.print("FRONT ULTRA TRIGGERED");
-  //   calcXandY(); //Calculate x and y
-  //
-  //   //FOR TESTING: Print x and y value
-  //   char message[] = "Distance travelled";
-  //   printLCD(x,y,message);
-  //
-  //   turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
-  // }
+  //Serial.println(frontUltra.avg());
+  if (frontUltra.avg()<12){
+    driveTrain.setPower(0, 0); //Stop robot
+    lcd.clear();          //COMBAK: Remove this, for testing
+    lcd.setCursor(0, 0);
+    lcd.print("FRONT ULTRA TRIGGERED");
+    calcXandY(); //Calculate x and y
+
+    //FOR TESTING: Print x and y value
+    char message[] = "Distance travelled";
+    printLCD(x,y,message);
+
+    turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
+  }
 
   //TODO: Test out line sensor code/values
   //If line sensor triggered
@@ -297,12 +297,14 @@ void driveFollow(){
   // }
 
   //If flame sensor senses fire
-  if(fireSensor.isFire()){
-    if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-      state = FLAME;
-    }
+  // if(fireSensor.isFire()){
+  //   if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
+  //     state = FLAME;
+  //   }
+  // }
+  else{
+    followWall();
   }
-  followWall();
 }
 
 
