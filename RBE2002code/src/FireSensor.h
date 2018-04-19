@@ -27,6 +27,7 @@ public:
   int getx();
   bool centerHeight();
   void blowOutCandle();
+  void oscillate(int);
 
 private:
   bool foundX =false;

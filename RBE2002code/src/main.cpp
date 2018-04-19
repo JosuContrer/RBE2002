@@ -58,7 +58,7 @@ int newLeftSpeed;
 int newRightSpeed;
 float gyro;
 bool returnHome;
-//MotorStates testMotor;
+MotorStates testMotor;
 
 ////////////////////////
 //Function prototypes //
@@ -126,9 +126,9 @@ void setup() {
   fireSensor.initialize();
   //calibrateLineSensor(); //TODO: Record values into memory
   fanInitialize();
-
-  //PIDs
   driveTrain.initialize();
+  
+  //PIDs
   driveStraightPID.setpid(30,.1,.02); //PID to drive straight
   turnPID.setpid(10,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
@@ -136,6 +136,9 @@ void setup() {
   //Displays
   lcd.begin(16, 2);
   Serial.begin(9600);
+
+  //TESTING
+  testMotor.initialize();
 }
 
 
@@ -221,28 +224,43 @@ void loop() {
     case FLAME: //REVIEW:
       lcd.clear();
       lcd.setCursor(0, 1);
+      //if(!fireSensor.isFire()){
+      //   break;
+      // }
       lcd.print("Flame is in front");
+      driveTrain.setPower(0, 0);
       bool hVal;
       bool xVal;
 
       if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
         /**********************************************/
         hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Center Height");
+        delay(2000);
         /**********************************************/
         xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
         /**********************************************/
+        driveTrain.setPower(0, 0);
         calculateHeight(); //determine height of candle
         saveValues(); //save x, y, and z values (will change when robot returns home)
         /**********************************************/
       }
       if(hVal && xVal){
-        if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
+        //if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
+        lcd.clear();
+        lcd.setCursor(0, 0);
+          lcd.print("Blowing");
           fireSensor.blowOutCandle(); //extinguish the candle
           blowing = true;
-        }else{
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Blew out candle");
+        //}else{
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
-          state = WALLFOLLOW; //have robot continue driving home
-        }
+          state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
+        //}
       }
       break;
     }
@@ -259,6 +277,7 @@ void loop() {
  * @param turnDir 1 for right, 0 for left
  */
 void turnInitialize(int turnDir){
+  lcd.clear();
   baseLeftSpeed=0;
   baseRightSpeed=0;
   switch(turnDir){
@@ -313,11 +332,12 @@ void driveFollow(){
   // }
 
   //If flame sensor senses fire
-  // if(fireSensor.isFire()){
-  //   if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-  //     state = FLAME;
-  //   }
-  // }
+  if(fireSensor.isFire()){
+    //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
+      state = FLAME;
+      return;
+    //}
+  }
   else{
     followWall();
   }
@@ -347,10 +367,10 @@ void followWall(){
     // TESTING //
     /////////////
     /////////////
-  // Serial.print("Left: ");
-  // Serial.println(frontUltraVal);
-  // Serial.print("Right: ");
-  // Serial.println(backUltraVal);
+  Serial.print("Left: ");
+  Serial.println(frontUltraVal);
+  Serial.print("Right: ");
+  Serial.println(backUltraVal);
 
 
 
@@ -436,13 +456,13 @@ void printLCD(int valOne, int valTwo, char message[]){
 void displayXYZ(){
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("X Val: ");
+  lcd.print("X: ");
   lcd.print(saveX);
-  lcd.print("   ");
-  lcd.print("Y Val: ");
+  lcd.print("  ");
+  lcd.print("Y: ");
   lcd.print(saveY);
   lcd.setCursor(0, 1);
-  lcd.print("Z Val: ");
+  lcd.print("Z: ");
   lcd.print(saveZ);
 }
 
@@ -511,7 +531,10 @@ bool centerFlameX(){
   int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
   int newSpeed = baseLeftSpeed + centerXError;
   driveTrain.setPower(newLeftSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
-  if(centerXError == 0){
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("Center X");
+  if(centerXError <= 2){
     return true;
   }else{
     return false;

@@ -5,6 +5,7 @@
 #include "PID.h"
 #include "Fan.h"
 
+
 //////////////
 //CONSTANTS //
 //////////////
@@ -179,7 +180,7 @@ bool FireSensor::centerHeight(){
     int newError = STARTVAL - fanError;
     fanServo.write(newError); //add error to initial starting position
     //Serial.println(fanError);
-    if(fanError = 0){
+    if(fanError <= 2){
       return true; //When it sees the candle
     }else{
       return false;
@@ -193,9 +194,9 @@ bool FireSensor::centerHeight(){
 * Blows out candle
 */
 void FireSensor::blowOutCandle(){
-  if(isFire()){
+  //if(isFire()){
     fanState(ON); //turns fan on
-  }
+  //}
 
   //have fan oscillate up and down in order to be sure to extinguish flame
 
@@ -205,11 +206,18 @@ void FireSensor::blowOutCandle(){
   * Do NOT run this code until the range is determined, otherwise the servo will try and go the *
   * full 180 degrees and make either stall the servo or break something on the robot            *
   ***********************************************************************************************/
+  oscillate(3);
+}
 
-  for(int i = 0; i < 180; i++){
-    fanServo.write(i);
-  }
-  for(i = 180; i > 0; i--){
-    fanServo.write(i);
+void FireSensor::oscillate(int count){
+  for(int m = 0; m < count; m++){
+    for(int i = 60; i < 120; i++){
+      fanServo.write(i);
+      delay(10);
+    }
+    for(i = 120; i > 60; i--){
+      fanServo.write(i);
+      delay(10);
+    }
   }
 }
