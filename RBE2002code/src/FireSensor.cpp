@@ -8,8 +8,8 @@
 //////////////
 //CONSTANTS //
 //////////////
-#define STARTVAL 90  //where Servo normally starts
-#define CENTER_VAL 90 //Where the flame is centered according to the sensor
+#define STARTVAL 80  //where Servo normally starts
+#define CENTER_VAL 300 //Where the flame is centered according to the sensor
 
 
 //////////////////////
@@ -57,7 +57,9 @@ void FireSensor::initialize(){
   Write_2bytes(0x33,0x33); delay(10);
   delay(100);
 
-  centerFan.setpid(1,.2,.02); //TODO: create PID to center the flame in the center of the sensor
+  //centerFan.setpid(0.03,0.001,0); //Work good but slow
+  //centerFan.setpid(0.03,0.006,0); //Better when working alone
+  centerFan.setpid(0.02,0.004,0); //REVIEW: A lot better
 }
 
 
@@ -171,16 +173,16 @@ int FireSensor::getx(){
 /**
  * Moves servo so flame is centered with servo
  */
-void FireSensor::centerHeight(){
-/****************************
- * IDEA:                    *
- * static int i = STARTVAL; *
- * if(getz() < CENTER_VAL){ *
- * fanServo.write(++i);     *
- * }                        *
- ****************************/
-  int fanError = centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
-  fanServo.write(STARTVAL + fanError); //add error to initial starting position
+bool FireSensor::centerHeight(){
+if(isFire()){
+  int fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
+  int newError = STARTVAL - fanError;
+  fanServo.write(newError); //add error to initial starting position
+  //Serial.println(fanError);
+  if(fanError = 0){
+    return true; //When it sees the candle
+  }
+}
 }
 
 

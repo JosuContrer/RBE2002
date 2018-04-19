@@ -25,10 +25,11 @@ public:
   bool isFire();
   int getz();
   int getx();
-  void centerHeight();
+  bool centerHeight();
   void blowOutCandle();
 
 private:
+  bool foundX =false;
   int IRsensorAddress = 0xB0;
   int slaveAddress;
   int ledPin = 13;
