@@ -80,6 +80,7 @@ void displayXYZ();
 void saveValues();
 bool centerFlameX();
 void driveToFlame();
+void driveStraight();
 
 ////////////////////
 //Object Creation //
@@ -98,7 +99,8 @@ QTRSensorsAnalog qtraSix((unsigned char[]) {0, 1, 2, 3, 4, 5}, NUM_SENSORS, NUM_
 Bounce debouncer = Bounce();
 Adafruit_BNO055 bno = Adafruit_BNO055();
 extern Servo fanServo;
-
+PID encoderPID;
+PID gyroPID;
 
 
 //////////////////////
@@ -132,6 +134,8 @@ void setup() {
   driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
   turnPID.setpid(10,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
+  encoderPID.setpid(1, 0, 0);
+  gyroPID.setpid(1, 0, 0);
 
   //Displays
   lcd.begin(16, 2);
@@ -172,15 +176,6 @@ void loop() {
       state = STOP;
       displayXYZ(); //print to screen coordinates of candle
     }
-
-  }
-  if(fireSensor.isFire()){
-    //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-
-      //state = FLAME;
-
-      return;
-    //}
   }
   //Main flow control
   switch(state){
@@ -277,6 +272,11 @@ void loop() {
       }
       break;
     case TRAVELTOFLAME:
+      driveStraight();
+      if(fireSensor.isFire()){
+        driveTrain.setPower(0,0);
+        state = FLAME;
+      }
       break;
     }
 
@@ -352,7 +352,7 @@ void driveFollow(){
   else if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
       //state = FLAME;
-    centerFlameX();
+    centerFlameX();  //center flame in x direction
     driveToFlame();
     return;
     //}
@@ -542,10 +542,10 @@ void setupIMU()
   bno.setExtCrystalUse(true);
 }
 
+
 /**
  * Center flame in x direction
  */
-
 bool centerFlameX(){
   fireSensor.useSensor();
   int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
@@ -556,22 +556,51 @@ bool centerFlameX(){
   lcd.print(newSpeed);
   lcd.setCursor(0, 1);
   lcd.print(fireSensor.getx());
-  // if(centerXError <= 2){
-  //   driveTrain.setPower(0, 0);
-  //   return true;
-  // }else{
+   if(centerXError <= 2){
+     driveTrain.setPower(0, 0);
+     return true;
+   }else{
     return false;
-  // }
+   }
 }
 
+
+/**
+ * Drive past flame by width of robot, then initialize turn
+ * NOTE: This will go to TRAVELTOFLAME
+ */
 void driveToFlame(){
   unsigned long drivePast = leftEncTicks + 100;
-  //int saveLeftEncoder = leftEncTicks;
+
+  //Drive past flame
   if(leftEncTicks < drivePast){
     driveTrain.setPower(200, 200);
   }
   else{
-    goToFlame = true;
+    goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
     turnInitialize(RIGHT);
   }
+}
+
+
+/**
+ * Drive straight using complimentary filter of gyro and encoders
+ */
+void driveStraight(){
+  //NOTE: These values must add to 1
+  float gyroPercentage = 0.5;
+  float encoderPercentage = 0.5;
+
+  //Gyro PID
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  int gyroError = gyroPID.calc(gyro, euler.x());
+
+  //Encoder PID
+  int encoderError = encoderPID.calc(rightEncTicks, leftEncTicks);
+
+  //Complimentary Filter
+  int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
+  newLeftSpeed = baseLeftSpeed_120 - driveCompFilter;
+  newRightSpeed = baseRightSpeed_120 + driveCompFilter;
+  driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
