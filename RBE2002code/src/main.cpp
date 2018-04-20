@@ -30,12 +30,12 @@
 //GLOBAL VARIABLES //
 /////////////////////
 bool blowing = false; //For Flame state in order to know if the candle is out or not
-
+bool goToFlame = false;
 
 //////////////////////////
 //State diagram control //
 //////////////////////////
-enum State {STOP, WALLFOLLOW,TURN, FLAME} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -79,7 +79,7 @@ void calculateHeight();
 void displayXYZ();
 void saveValues();
 bool centerFlameX();
-
+void driveToFlame();
 
 ////////////////////
 //Object Creation //
@@ -105,7 +105,7 @@ extern Servo fanServo;
 //Arduino Functions //
 //////////////////////
 void setup() {
-  state = STOP; //Robot will start being stopped
+  state = FLAME; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
   returnHome = false; //Not currently returning returning home
@@ -127,9 +127,9 @@ void setup() {
   //calibrateLineSensor(); //TODO: Record values into memory
   fanInitialize();
   driveTrain.initialize();
-  
+
   //PIDs
-  driveStraightPID.setpid(30,.1,.02); //PID to drive straight
+  driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
   turnPID.setpid(10,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
 
@@ -143,7 +143,7 @@ void setup() {
 
 
 void loop() {
- //testMotor.motorDrive(TURNRIGHTCENTER);
+ //testMotor.motorDrive(STRAIGHT);
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
 
@@ -174,7 +174,14 @@ void loop() {
     }
 
   }
+  if(fireSensor.isFire()){
+    //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
 
+      //state = FLAME;
+
+      return;
+    //}
+  }
   //Main flow control
   switch(state){
     case WALLFOLLOW:
@@ -217,11 +224,17 @@ void loop() {
       Serial.println(abs(gyro - desiredGyro));
 
       if(proportionalVal<0){
-        state=WALLFOLLOW;
+        if(goToFlame){
+          state = TRAVELTOFLAME;
+        }
+        else{
+          state=WALLFOLLOW;
+        }
       }
       break;
 
     case FLAME: //REVIEW:
+
       lcd.clear();
       lcd.setCursor(0, 1);
       //if(!fireSensor.isFire()){
@@ -238,11 +251,11 @@ void loop() {
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Center Height");
-        delay(2000);
+        //delay(200);
         /**********************************************/
         xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
         /**********************************************/
-        driveTrain.setPower(0, 0);
+        //driveTrain.setPower(0, 0);
         calculateHeight(); //determine height of candle
         saveValues(); //save x, y, and z values (will change when robot returns home)
         /**********************************************/
@@ -263,7 +276,10 @@ void loop() {
         //}
       }
       break;
+    case TRAVELTOFLAME:
+      break;
     }
+
 }
 
 
@@ -320,27 +336,30 @@ void driveFollow(){
 
     turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
-
-  //TODO: Test out line sensor code/values
-  //If line sensor triggered
-  // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
-  //   driveTrain.setPower(0, 0);
-  //   calcXandY();
-  //   char message[] = "Left/Right Motor Speeds";
-  //   printLCD(x,y,message);
-  //   //change to new switch case here, will need to turn now
-  // }
-
-  //If flame sensor senses fire
-  if(fireSensor.isFire()){
+  //
+  // //TODO: Test out line sensor code/values
+  // //If line sensor triggered
+  // // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
+  // //   driveTrain.setPower(0, 0);
+  // //   calcXandY();
+  // //   char message[] = "Left/Right Motor Speeds";
+  // //   printLCD(x,y,message);
+  // //   //change to new switch case here, will need to turn now
+  // // }
+  //
+  // //If flame sensor senses
+  // fire
+  else if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-      state = FLAME;
-      return;
+      //state = FLAME;
+    centerFlameX();
+    driveToFlame();
+    return;
     //}
   }
-  else{
+   else{
     followWall();
-  }
+   }
 }
 
 
@@ -349,7 +368,6 @@ void driveFollow(){
  * NOTE: Does not include set distance from wall
  */
 void followWall(){
-
   //set base speeds
   baseRightSpeed =baseRightSpeed_120;
   baseLeftSpeed = baseLeftSpeed_120;
@@ -527,16 +545,33 @@ void setupIMU()
 /**
  * Center flame in x direction
  */
+
 bool centerFlameX(){
+  fireSensor.useSensor();
   int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
-  int newSpeed = baseLeftSpeed + centerXError;
-  driveTrain.setPower(newLeftSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
+  int newSpeed = 120 + centerXError;
+  driveTrain.setPower(newSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
   lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(newSpeed);
   lcd.setCursor(0, 1);
-  lcd.print("Center X");
-  if(centerXError <= 2){
-    return true;
-  }else{
+  lcd.print(fireSensor.getx());
+  // if(centerXError <= 2){
+  //   driveTrain.setPower(0, 0);
+  //   return true;
+  // }else{
     return false;
+  // }
+}
+
+void driveToFlame(){
+  unsigned long drivePast = leftEncTicks + 100;
+  //int saveLeftEncoder = leftEncTicks;
+  if(leftEncTicks < drivePast){
+    driveTrain.setPower(200, 200);
+  }
+  else{
+    goToFlame = true;
+    turnInitialize(RIGHT);
   }
 }
