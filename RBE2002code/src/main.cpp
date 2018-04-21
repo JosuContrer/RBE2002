@@ -35,7 +35,7 @@ bool goToFlame = false;
 //////////////////////////
 //State diagram control //
 //////////////////////////
-enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME, NOWALL} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -237,7 +237,6 @@ void loop() {
         }
       }
       break;
-    case NOWALL:
 
     case FLAME: //REVIEW:
 
@@ -359,9 +358,7 @@ void driveFollow(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 0);
     lcd.print("NO Wall");
-    for(int i = 0; i < 30000; i++){ //COMBAK This should be changed to a much better function
-      driveTrain.setPower(120, 120);
-    }
+    driveStraight(6);
     turnInitialize(LEFT);
   }
   //
