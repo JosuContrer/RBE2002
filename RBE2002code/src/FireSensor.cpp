@@ -60,7 +60,7 @@ void FireSensor::initialize(){
 
   //centerFan.setpid(0.03,0.001,0); //Work good but slow
   //centerFan.setpid(0.03,0.006,0); //Better when working alone
-  centerFan.setpid(0.02,0.004,0); //REVIEW: A lot better
+  centerFan.setpid(0.02,0.004,0.0001); //REVIEW: A lot better
 }
 
 
