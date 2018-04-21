@@ -178,6 +178,12 @@ bool FireSensor::centerHeight(){
   if(isFire()){
     int fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
     int newError = STARTVAL - fanError;
+    if (newError>178){
+      newError=178;
+    }
+    if(newError<2){
+      newError=0;
+    }
     fanServo.write(newError); //add error to initial starting position
     //Serial.println(fanError);
     if(fanError <= 2){
