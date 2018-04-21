@@ -31,7 +31,7 @@
 /////////////////////
 bool blowing = false; //For Flame state in order to know if the candle is out or not
 bool goToFlame = false;
-
+int turnLeft = 1;
 //////////////////////////
 //State diagram control //
 //////////////////////////
@@ -72,7 +72,7 @@ void RightEncoderTicks();
 void startOrStop();
 void calibrateLineSensor();
 void setupIMU();
-void turnInitialize(int);
+int turnInitialize(int);
 void drivePID();
 void gyroVal();
 void calculateHeight();
@@ -82,6 +82,7 @@ bool centerFlameX();
 void driveToFlame();
 bool driveStraight(float);
 double returnDistance();
+void islandTurn();
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -180,6 +181,7 @@ void loop() {
   switch(state){
     case WALLFOLLOW:
       driveFollow();
+
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("WALLFOLLOWING");
@@ -193,22 +195,18 @@ void loop() {
 
     case TURN: //REVIEW:
       /******************************************************************************
-       * IDEA                                                                       *
-       * Turning should have its own PID, and it should not be based on ultrasonics *
-       ******************************************************************************/
-       int count;
-       count=millis()%2;
-       if(count == 1){
-         frontUltraVal = frontLeftUltra.avg();
-       }
-       else if(count==0){
-         backUltraVal = backLeftUltra.avg();
-       }
+      * IDEA                                                                       *
+      * Turning should have its own PID, and it should not be based on ultrasonics *
+      ******************************************************************************/
+      leftEncTicks = 0;
+      rightEncTicks = 0;
+
       gyro = (int) euler.x();
       proportionalVal = turnPID.calc(gyro, desiredGyro);
       newLeftSpeed = baseLeftSpeed - proportionalVal;
       newRightSpeed = baseRightSpeed + proportionalVal;
       driveTrain.setPower(newLeftSpeed, newRightSpeed);
+
       lcd.setCursor(0, 0);
       lcd.print("TURNING");
       lcd.setCursor(0, 1);
@@ -218,19 +216,20 @@ void loop() {
       lcd.setCursor(10, 0);
       lcd.print(abs(desiredGyro - gyro));
 
-      Serial.print("Gyro: ");
-      Serial.println(gyro);
-      Serial.print("desiredGyro: ");
-      Serial.println(desiredGyro);
-      Serial.print("Difference: ");
-      Serial.println(abs(gyro - desiredGyro));
+      // Serial.print("Gyro: ");
+      // Serial.println(gyro);
+      // Serial.print("desiredGyro: ");
+      // Serial.println(desiredGyro);
+      // Serial.print("Difference: ");
+      // Serial.println(abs(gyro - desiredGyro));
 
       if(proportionalVal<0){
+
         if(goToFlame){
           state = TRAVELTOFLAME;
         }
-        else if(frontUltraVal > 15 && backUltraVal > 15){
-          turnInitialize(LEFT);
+        if(turnLeft){
+          islandTurn();
         }
         else{
           state=WALLFOLLOW;
@@ -304,7 +303,7 @@ void loop() {
  * Initializes values for turning
  * @param turnDir 1 for right, 0 for left
  */
-void turnInitialize(int turnDir){
+int turnInitialize(int turnDir){
   lcd.clear();
   baseLeftSpeed=0;
   baseRightSpeed=0;
@@ -325,6 +324,7 @@ void turnInitialize(int turnDir){
       state=TURN;
       break;
   }
+  return turnDir;
 }
 
 
@@ -340,7 +340,7 @@ void driveFollow(){
     backUltraVal = backLeftUltra.avg();
   }
   //If front ultrasonic triggered (wall in front)
-  //Serial.println(frontUltra.avg());
+  Serial.println(frontUltra.avg());
   if (frontUltra.avg()<15){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
@@ -354,15 +354,17 @@ void driveFollow(){
 
     turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
-  if(frontUltraVal > 20 && backUltraVal > 20){
-    lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(0, 0);
-    lcd.print("NO Wall");
-    bool reachedDistance = driveStraight(10);
-    if(reachedDistance){
-      turnInitialize(LEFT);
-    }
-  }
+  // else if(frontUltraVal > 15 && backUltraVal > 15){
+  //   lcd.clear();          //COMBAK: Remove this, for testing
+  //   lcd.setCursor(0, 0);
+  //   lcd.print("NO Wall");
+  //   bool reachedDistance = driveStraight(10);
+  //   if(reachedDistance){
+  //     turnLeft = turnInitialize(LEFT);
+  //   }else{
+  //     return;
+  //   }
+  // }
   //
   // //TODO: Test out line sensor code/values
   // //If line sensor triggered
@@ -651,4 +653,11 @@ double returnDistance(){
   Serial.println(distance);
   return distance;
   //TODO: For final distance, must use ultrasonic to get distance from robot to candle
+}
+
+void islandTurn(){
+  driveStraight(10);
+  turnInitialize(LEFT);
+  driveStraight(6);
+  turnLeft = 0;
 }
