@@ -60,7 +60,7 @@ void FireSensor::initialize(){
 
   //centerFan.setpid(0.03,0.001,0); //Work good but slow
   //centerFan.setpid(0.03,0.006,0); //Better when working alone
-  centerFan.setpid(0.02,0.004,0); //REVIEW: A lot better
+  centerFan.setpid(0.02,0.004,0.0001); //REVIEW: A lot better
 }
 
 
@@ -178,6 +178,12 @@ bool FireSensor::centerHeight(){
   if(isFire()){
     int fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
     int newError = STARTVAL - fanError;
+    if (newError>178){
+      newError=178;
+    }
+    if(newError<2){
+      newError=0;
+    }
     fanServo.write(newError); //add error to initial starting position
     //Serial.println(fanError);
     if(fanError <= 2){

@@ -134,7 +134,7 @@ void setup() {
   //PIDs
   driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
   turnPID.setpid(13,.2,.02); //PID for turning
-  centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
+  centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
   encoderPID.setpid(.1, 0, 0);
   gyroPID.setpid(10, 0, 0);
 
