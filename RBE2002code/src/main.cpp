@@ -80,7 +80,7 @@ void displayXYZ();
 void saveValues();
 bool centerFlameX();
 void driveToFlame();
-void driveStraight(float);
+bool driveStraight(float);
 double returnDistance();
 ////////////////////
 //Object Creation //
@@ -354,12 +354,14 @@ void driveFollow(){
 
     turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
-  if(frontUltraVal > 15 && backUltraVal > 15){
+  if(frontUltraVal > 20 && backUltraVal > 20){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 0);
     lcd.print("NO Wall");
-    driveStraight(6);
-    turnInitialize(LEFT);
+    bool reachedDistance = driveStraight(10);
+    if(reachedDistance){
+      turnInitialize(LEFT);
+    }
   }
   //
   // //TODO: Test out line sensor code/values
@@ -615,7 +617,7 @@ void driveToFlame(){
 /**
  * Drive straight using complimentary filter of gyro and encoders
  */
-void driveStraight(float distToGo){
+bool driveStraight(float distToGo){
   //NOTE: These values must add to 1
   // float gyroPercentage = 0;
   // float encoderPercentage = 1;
@@ -636,9 +638,10 @@ void driveStraight(float distToGo){
     newLeftSpeed = baseLeftSpeed_120 - encoderError;
     newRightSpeed = baseRightSpeed_120 + encoderError;
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
+    return false;
   }
   else{
-    driveTrain.setPower(0,0);
+    return true;
   }
 }
 
