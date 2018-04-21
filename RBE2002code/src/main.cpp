@@ -21,8 +21,8 @@
 //////////////
 //CONSTANTS //
 //////////////
-#define baseLeftSpeed_120 150
-#define baseRightSpeed_120 150
+#define baseLeftSpeed_120 200
+#define baseRightSpeed_120 200
 #define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
 #define CENTERVAL_X 511.5 //TODO: Position of flame sensor so at center of x range
 
@@ -35,7 +35,7 @@ bool goToFlame = false;
 //////////////////////////
 //State diagram control //
 //////////////////////////
-enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME, NOWALL} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -80,8 +80,8 @@ void displayXYZ();
 void saveValues();
 bool centerFlameX();
 void driveToFlame();
-void driveStraight();
-
+void driveStraight(float);
+double returnDistance();
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -107,7 +107,7 @@ PID gyroPID;
 //Arduino Functions //
 //////////////////////
 void setup() {
-  state = STOP; //Robot will start being stopped
+  state = WALLFOLLOW; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
   returnHome = false; //Not currently returning returning home
@@ -134,12 +134,12 @@ void setup() {
   driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
   turnPID.setpid(13,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
-  encoderPID.setpid(1, 0, 0);
-  gyroPID.setpid(1, 0, 0);
+  encoderPID.setpid(.1, 0, 0);
+  gyroPID.setpid(10, 0, 0);
 
   //Displays
   lcd.begin(16, 2);
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   //TESTING
   testMotor.initialize();
@@ -150,7 +150,6 @@ void loop() {
  //testMotor.motorDrive(STRAIGHT);
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
-
   fireSensor.useSensor(); //save flame sensor values to array
 
   //Emergency start/stop button
@@ -197,7 +196,14 @@ void loop() {
        * IDEA                                                                       *
        * Turning should have its own PID, and it should not be based on ultrasonics *
        ******************************************************************************/
-
+       int count;
+       count=millis()%2;
+       if(count == 1){
+         frontUltraVal = frontLeftUltra.avg();
+       }
+       else if(count==0){
+         backUltraVal = backLeftUltra.avg();
+       }
       gyro = (int) euler.x();
       proportionalVal = turnPID.calc(gyro, desiredGyro);
       newLeftSpeed = baseLeftSpeed - proportionalVal;
@@ -223,11 +229,15 @@ void loop() {
         if(goToFlame){
           state = TRAVELTOFLAME;
         }
+        else if(frontUltraVal > 15 && backUltraVal > 15){
+          turnInitialize(LEFT);
+        }
         else{
           state=WALLFOLLOW;
         }
       }
       break;
+    case NOWALL:
 
     case FLAME: //REVIEW:
 
@@ -275,13 +285,13 @@ void loop() {
       }
       break;
     case TRAVELTOFLAME:
-      driveStraight();
+      driveStraight(10);
       if(fireSensor.isFire()){
         driveTrain.setPower(0,0);
         state = FLAME;
       }
       break;
-    }
+     }
 
 }
 
@@ -301,7 +311,7 @@ void turnInitialize(int turnDir){
   baseRightSpeed=0;
   switch(turnDir){
     case LEFT:
-      desiredGyro=(int) gyro - 90 % 360;
+      desiredGyro=((int) gyro - 90) % 360;
       // if(desiredGyro > 360s){
       //   desiredGyro =((int)gyro+90)-360;
       //
@@ -309,7 +319,7 @@ void turnInitialize(int turnDir){
       state=TURN;
       break;
     case RIGHT:
-      desiredGyro=((int)gyro + 90)% 360;
+      desiredGyro=((int)gyro + 90) % 360;
       // if(desiredGyro > 360){
       //   desiredGyro =((int)gyro+90)-360;
       // }
@@ -323,7 +333,13 @@ void turnInitialize(int turnDir){
  * Driving control
  */
 void driveFollow(){
-
+  int count=millis()%2;
+  if(count == 1){
+    frontUltraVal = frontLeftUltra.avg();
+  }
+  else if(count==0){
+    backUltraVal = backLeftUltra.avg();
+  }
   //If front ultrasonic triggered (wall in front)
   //Serial.println(frontUltra.avg());
   if (frontUltra.avg()<15){
@@ -338,6 +354,15 @@ void driveFollow(){
     printLCD(x,y,message);
 
     turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
+  }
+  if(frontUltraVal > 15 && backUltraVal > 15){
+    lcd.clear();          //COMBAK: Remove this, for testing
+    lcd.setCursor(0, 0);
+    lcd.print("NO Wall");
+    for(int i = 0; i < 30000; i++){ //COMBAK This should be changed to a much better function
+      driveTrain.setPower(120, 120);
+    }
+    turnInitialize(LEFT);
   }
   //
   // //TODO: Test out line sensor code/values
@@ -414,8 +439,8 @@ void followWall(){
  ****************************************************/
 void calcXandY(){
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + (temp *.0072*2) * cos(gyro);   //REVIEW: Add back in gyro code
-  y = y + (temp *.0072*2) * sin(gyro);
+  x = x + (temp *.0072*2)/ 8 * cos(gyro);   //REVIEW: Add back in gyro code
+  y = y + (temp *.0072*2)/ 8 * sin(gyro);
   leftEncTicks=0;
   rightEncTicks=0;
   //TODO: For final distance, must use ultrasonic to get distance from robot to candle
@@ -503,6 +528,7 @@ void saveValues(){
  */
 void LeftEncoderTicks() {
   leftEncTicks++;
+  //Serial.println(leftEncTicks);
 }
 
 /**
@@ -510,6 +536,7 @@ void LeftEncoderTicks() {
  */
 void RightEncoderTicks() {
   rightEncTicks++;
+  //Serial.println(rightEncTicks);
 }
 
 
@@ -591,21 +618,37 @@ void driveToFlame(){
 /**
  * Drive straight using complimentary filter of gyro and encoders
  */
-void driveStraight(){
+void driveStraight(float distToGo){
   //NOTE: These values must add to 1
-  float gyroPercentage = 0.5;
-  float encoderPercentage = 0.5;
-
+  // float gyroPercentage = 0;
+  // float encoderPercentage = 1;
+  //delay(500);
   //Gyro PID
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  int gyroError = gyroPID.calc(gyro, euler.x());
+  // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  // int gyroError = gyroPID.calc(gyro, euler.x());
+  // gyro=euler.x();
+  float distTraveled = returnDistance();
+  if(distTraveled < distToGo){
 
-  //Encoder PID
-  int encoderError = encoderPID.calc(rightEncTicks, leftEncTicks);
+    //Encoder PID
+    int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
 
-  //Complimentary Filter
-  int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
-  newLeftSpeed = baseLeftSpeed_120 - driveCompFilter;
-  newRightSpeed = baseRightSpeed_120 + driveCompFilter;
-  driveTrain.setPower(newLeftSpeed, newRightSpeed);
+
+    //Complimentary Filter
+    //int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
+    newLeftSpeed = baseLeftSpeed_120 - encoderError;
+    newRightSpeed = baseRightSpeed_120 + encoderError;
+    driveTrain.setPower(newLeftSpeed, newRightSpeed);
+  }
+  else{
+    driveTrain.setPower(0,0);
+  }
+}
+
+double returnDistance(){
+  double temp= (leftEncTicks + rightEncTicks)/2;
+  double distance = distance + ((temp *.0072*2)) / 8;
+  Serial.println(distance);
+  return distance;
+  //TODO: For final distance, must use ultrasonic to get distance from robot to candle
 }
