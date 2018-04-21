@@ -206,7 +206,7 @@ void FireSensor::blowOutCandle(){
   * Do NOT run this code until the range is determined, otherwise the servo will try and go the *
   * full 180 degrees and make either stall the servo or break something on the robot            *
   ***********************************************************************************************/
-  oscillate(3);
+  //oscillate(3);
 }
 
 void FireSensor::oscillate(int count){

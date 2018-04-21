@@ -107,7 +107,7 @@ PID gyroPID;
 //Arduino Functions //
 //////////////////////
 void setup() {
-  state = FLAME; //Robot will start being stopped
+  state = STOP; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
   returnHome = false; //Not currently returning returning home
@@ -132,7 +132,7 @@ void setup() {
 
   //PIDs
   driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
-  turnPID.setpid(10,.2,.02); //PID for turning
+  turnPID.setpid(13,.2,.02); //PID for turning
   centerFlameXPID.setpid(1, .2, .02); //PID for centering flame
   encoderPID.setpid(1, 0, 0);
   gyroPID.setpid(1, 0, 0);
@@ -189,6 +189,7 @@ void loop() {
 
     case STOP:
       driveTrain.setPower(0, 0);
+      //lcd.print(fireSensor.getx());
       break;
 
     case TURN: //REVIEW:
@@ -264,10 +265,12 @@ void loop() {
           blowing = true;
           lcd.clear();
           lcd.setCursor(0, 0);
+          if(!fireSensor.isFire()){
           lcd.print("Blew out candle");
         //}else{
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
           state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
+        }
         //}
       }
       break;
@@ -323,7 +326,7 @@ void driveFollow(){
 
   //If front ultrasonic triggered (wall in front)
   //Serial.println(frontUltra.avg());
-  if (frontUltra.avg()<12){
+  if (frontUltra.avg()<15){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 0);
@@ -351,9 +354,9 @@ void driveFollow(){
   // fire
   else if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-      //state = FLAME;
-    centerFlameX();  //center flame in x direction
-    driveToFlame();
+   state = FLAME;
+    //centerFlameX();  //center flame in x direction
+    //driveToFlame();
     return;
     //}
   }
@@ -549,17 +552,19 @@ void setupIMU()
 bool centerFlameX(){
   fireSensor.useSensor();
   int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
-  int newSpeed = 120 + centerXError;
-  driveTrain.setPower(newSpeed, newSpeed); //dont want wheels to turn, so make sure both are going in same direction
+  int newSpeed = 90 + centerXError;
+  int encoderError = encoderPID.calc(rightEncTicks, leftEncTicks);
+  driveTrain.setPower(newSpeed+encoderError, newSpeed-encoderError); //dont want wheels to turn, so make sure both are going in same direction
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(newSpeed);
   lcd.setCursor(0, 1);
   lcd.print(fireSensor.getx());
-   if(centerXError <= 2){
+   if(abs(CENTERVAL_X-fireSensor.getx()) <=20){
      driveTrain.setPower(0, 0);
      return true;
-   }else{
+   }
+   else{
     return false;
    }
 }
