@@ -231,7 +231,7 @@ void loop() {
       // Serial.print("Difference: ");
       // Serial.println(abs(gyro - desiredGyro));
 
-      if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !gotoFlame){
+      if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !goToFlame){
         wallFound = true;
       }
       if(abs(desiredGyro - gyro)<6|| wallFound){
@@ -313,8 +313,9 @@ void loop() {
         driveTrain.setPower(-100, -100);
         delay(1000);
         driveTrain.setPower(0, 0);
+        cliff = true;
         turnInitialize(RIGHT);
-        driveStraight(100);
+        //driveStraight(100);
         break;
     case DRIVESTRAIGHT:
       // lcd.setCursor(0,0);
@@ -328,6 +329,15 @@ void loop() {
         else if(isSensorCliff()){
           driveTrain.setPower(0,0);
           state = TURNRIGHTLINE;
+        }
+        else if(frontUltra.avg() < 15){
+          goToFlame = false; //not in flame
+          turnLeft = false;
+          cliff = false;
+          turnInitialize(RIGHT);
+        }
+        else if(frontLeftUltra.avg() < 25){
+          state = WALLFOLLOW;
         }
         //Encoder PID
         int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
