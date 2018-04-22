@@ -231,7 +231,7 @@ void loop() {
       // Serial.print("Difference: ");
       // Serial.println(abs(gyro - desiredGyro));
 
-      if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !gotoFlame){
+      if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !goToFlame){
         wallFound = true;
       }
       if(abs(desiredGyro - gyro)<6|| wallFound){
@@ -467,8 +467,8 @@ void driveFollow(){
  */
 void followWall(){
   //set base speeds
-  baseRightSpeed =100;
-  baseLeftSpeed = 100;
+  baseRightSpeed =baseLeftSpeed_120;
+  baseLeftSpeed = baseRightSpeed_120;
 
   //ping ultrasonics in succession
   int count=millis()%2;
@@ -512,8 +512,8 @@ void followWall(){
   int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
   int wallDist = driveStraightPID.calc(20,(frontUltraVal+backUltraVal)/2);
-  newLeftSpeed = baseLeftSpeed - .55*proportionalVal- .2*encoderError-.1*wallDist;
-  newRightSpeed = baseRightSpeed + .55*proportionalVal+.2*encoderError+.1*wallDist;
+  newLeftSpeed = baseLeftSpeed - .35*proportionalVal- .15*encoderError-.1*wallDist;
+  newRightSpeed = baseRightSpeed + .35*proportionalVal+.15*encoderError+.1*wallDist;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
@@ -712,8 +712,8 @@ bool driveStraight(float distToGo){
   // int gyroError = gyroPID.calc(gyro, euler.x());
   // gyro=euler.x();
   calcXandY();
-  baseLeftSpeed=100;
-  baseRightSpeed=100;
+  baseLeftSpeed=baseLeftSpeed_120;
+  baseRightSpeed=baseRightSpeed_120;
   lcd.setCursor(0,0);
   lcd.print("in Drive straight");
   distTraveled = returnDistance();
