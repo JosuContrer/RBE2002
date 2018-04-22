@@ -133,7 +133,7 @@ void setup() {
   //Initialize all classes
   setupIMU();
   fireSensor.initialize();
-  //calibrateLineSensor(); //TODO: Record values into memory
+  calibrateLineSensor(); //TODO: Record values into memory
   fanInitialize();
   driveTrain.initialize();
 
@@ -155,6 +155,7 @@ void setup() {
 
 void loop() {
  //testMotor.motorDrive(STRAIGHT);
+
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
   fireSensor.useSensor(); //save flame sensor values to array
@@ -304,14 +305,11 @@ void loop() {
 
      case TURNRIGHTLINE:
       //TODO:
+        driveTrain.setPower(-100, -100);
+        delay(1000);
+        driveTrain.setPower(0, 0);
         turnInitialize(RIGHT);
         driveStraight(100);
-        if(frontUltra.avg() < 15){
-          goToFlame = false; //not in flame
-          turnLeft = false;
-          cliff = false;
-          turnInitialize(RIGHT);
-        }
         break;
     case DRIVESTRAIGHT:
       lcd.setCursor(0,0);
@@ -321,6 +319,10 @@ void loop() {
         if(fireSensor.isFire()){
           driveTrain.setPower(0,0);
           state = FLAME;
+        }
+        else if(isSensorCliff()){
+          driveTrain.setPower(0,0);
+          state = TURNRIGHTLINE;
         }
         //Encoder PID
         int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
@@ -617,21 +619,22 @@ void RightEncoderTicks() {
  * Calibrate line sensor by reading in values from EEPROM memory
  */
 void calibrateLineSensor() {
-  Serial.println("Calibrating....");
-  delay(500);
-
-  qtraSix.emittersOn();
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
-
-  qtraSix.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
-  EEPROM.readBlock<unsigned int>(addrCalibratedMinimumOn, qtraSix.calibratedMinimumOn, 8);
-  EEPROM.readBlock<unsigned int>(addrCalibratedMaximumOn, qtraSix.calibratedMaximumOn, 8);
-
-  Serial.println("EEPROM Recall Complete");
-
-  digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
-  delay(1000);
+  // Serial.println("Calibrating....");
+  // delay(500);
+  //
+  // qtraSix.emittersOn();
+  // pinMode(13, OUTPUT);
+  // digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
+  //
+  // qtraSix.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
+  // EEPROM.readBlock<unsigned int>(addrCalibratedMinimumOn, qtraSix.calibratedMinimumOn, 8);
+  // EEPROM.readBlock<unsigned int>(addrCalibratedMaximumOn, qtraSix.calibratedMaximumOn, 8);
+  //
+  // Serial.println("EEPROM Recall Complete");
+  //
+  // digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
+  // delay(1000);
+  pinMode(LINEFOLLOWER, INPUT);
 }
 
 /**
@@ -719,11 +722,15 @@ void islandTurn(int distance){
 }
 
 bool isSensorCliff(){
-  if(qtraSix.readLine(sensors) > 100){
-    driveTrain.setPower(0, 0);
-    calcXandY();
-    return true;
-  }else{
-    return false;
-  }
+  // if(qtraSix.readLine(sensors) > 2000){
+  //   driveTrain.setPower(0, 0);
+  //   calcXandY();
+  //   return true;
+  // }else{
+  //   return false;
+  // }
+  //
+  return digitalRead(LINEFOLLOWER) ? true : false;
+
+  //}
 }

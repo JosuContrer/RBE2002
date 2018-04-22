@@ -48,11 +48,12 @@
 #define addrCalibratedMinimumOn 0
 #define addrCalibratedMaximumOn 100
 
+#define LINEFOLLOWER A2
+
 
 /////////
 // FAN //
 /////////
 #define FANPIN 12
 #define FANSERVOPIN 8
-
 #endif
