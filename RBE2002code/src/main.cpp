@@ -63,6 +63,7 @@ bool returnHome;
 float distTraveled;
 float finalDistance;
 MotorStates testMotor;
+int turns=0;
 
 ////////////////////////
 //Function prototypes //
@@ -88,7 +89,7 @@ bool driveStraight(float);
 double returnDistance();
 void islandTurn(int);
 bool isSensorCliff();
-
+bool wallFound = false;
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -139,7 +140,7 @@ void setup() {
 
   //PIDs
   driveStraightPID.setpid(50,.2,.02); //PID to drive straight  //was 30
-  turnPID.setpid(30,.2,.02); //PID for turning
+  turnPID.setpid(23,.3,.01); //PID for turning
   centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
   encoderPID.setpid(.1, 0, 0);
   gyroPID.setpid(10, 0, 0);
@@ -229,7 +230,10 @@ void loop() {
       // Serial.print("Difference: ");
       // Serial.println(abs(gyro - desiredGyro));
 
-      if(abs(desiredGyro - gyro)<5){
+      if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !gotoFlame){
+        wallFound = true;
+      }
+      if(abs(desiredGyro - gyro)<6|| wallFound){
 
         if(goToFlame){
           driveStraight(400);
@@ -242,6 +246,7 @@ void loop() {
         }
         else{
           state=WALLFOLLOW;
+          wallFound=false;
         }
       }
       break;
@@ -314,8 +319,8 @@ void loop() {
         }
         break;
     case DRIVESTRAIGHT:
-      lcd.setCursor(0,0);
-      lcd.print("DRIVESTRAIGHT");
+      // lcd.setCursor(0,0);
+      // lcd.print("DRIVESTRAIGHT");
       if(distTraveled < finalDistance){
         //islandTurn = true;
         if(fireSensor.isFire()){
@@ -331,19 +336,28 @@ void loop() {
         newRightSpeed = baseRightSpeed + encoderError;
         driveTrain.setPower(newLeftSpeed, newRightSpeed);
         lcd.setCursor(0,1);
-        lcd.print(distTraveled);
+        lcd.print(newLeftSpeed);
         lcd.setCursor(10,1);
-        lcd.print(finalDistance);
+        lcd.print(newRightSpeed);
         distTraveled = returnDistance();
+
         //delay(100);
       }
 
        else{
          if(goToFlame){
            turnInitialize(RIGHT);
-         }else{
-         turnInitialize(LEFT);//TODO
-       }
+         }
+
+         else if (turns<2){
+           turns++;
+           turnInitialize(LEFT);//TODO
+         }
+        else{
+            turnLeft=false;
+            turns=0;
+            state=WALLFOLLOW;
+          }
        }
        break;
 
@@ -364,6 +378,7 @@ int turnInitialize(int turnDir){
   lcd.clear();
   baseLeftSpeed=0;
   baseRightSpeed=0;
+  calcXandY();
   switch(turnDir){
     case LEFT:
       desiredGyro=((int) gyro - 90) % 360;
@@ -371,7 +386,7 @@ int turnInitialize(int turnDir){
         desiredGyro += 360;
 
       }
-      turnLeft = true;
+      //turnLeft = true;
       state=TURN;
       break;
     case RIGHT:
@@ -450,8 +465,8 @@ void driveFollow(){
  */
 void followWall(){
   //set base speeds
-  baseRightSpeed =150;
-  baseLeftSpeed = 150;
+  baseRightSpeed =100;
+  baseLeftSpeed = 100;
 
   //ping ultrasonics in succession
   int count=millis()%2;
@@ -494,9 +509,9 @@ void followWall(){
   //PID control
   int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-  int wallDist = driveStraightPID.calc(15,(frontUltraVal+backUltraVal)/2);
-  newLeftSpeed = baseLeftSpeed - .75*proportionalVal- .25*encoderError-.1*wallDist;
-  newRightSpeed = baseRightSpeed + .75*proportionalVal+.25*encoderError+.1*wallDist;
+  int wallDist = driveStraightPID.calc(20,(frontUltraVal+backUltraVal)/2);
+  newLeftSpeed = baseLeftSpeed - .55*proportionalVal- .2*encoderError-.1*wallDist;
+  newRightSpeed = baseRightSpeed + .55*proportionalVal+.2*encoderError+.1*wallDist;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
@@ -693,7 +708,10 @@ bool driveStraight(float distToGo){
   // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   // int gyroError = gyroPID.calc(gyro, euler.x());
   // gyro=euler.x();
-  lcd.setCursor(0,1);
+  calcXandY();
+  baseLeftSpeed=100;
+  baseRightSpeed=100;
+  lcd.setCursor(0,0);
   lcd.print("in Drive straight");
   distTraveled = returnDistance();
   finalDistance = distTraveled + distToGo;
