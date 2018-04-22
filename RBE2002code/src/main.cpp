@@ -227,7 +227,7 @@ void loop() {
       // Serial.print("Difference: ");
       // Serial.println(abs(gyro - desiredGyro));
 
-      if(proportionalVal<0){
+      if(abs(desiredGyro - gyro)<5){
 
         if(goToFlame){
           state = TRAVELTOFLAME;
@@ -329,10 +329,10 @@ int turnInitialize(int turnDir){
   switch(turnDir){
     case LEFT:
       desiredGyro=((int) gyro - 90) % 360;
-      // if(desiredGyro > 360s){
-      //   desiredGyro =((int)gyro+90)-360;
-      //
-      // }
+      if(desiredGyro < 0){
+        desiredGyro += 360;
+
+      }
       turnLeft = true;
       state=TURN;
       break;
