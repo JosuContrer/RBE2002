@@ -314,6 +314,7 @@ int turnInitialize(int turnDir){
       //   desiredGyro =((int)gyro+90)-360;
       //
       // }
+      turnLeft = true;
       state=TURN;
       break;
     case RIGHT:
@@ -414,7 +415,7 @@ void followWall(){
     lcd.print("NO Wall");
     bool reachedDistance = driveStraight(10);
     //if(reachedDistance){
-      //turnLeft = turnInitialize(LEFT);
+    //turnLeft = turnInitialize(LEFT);
       //state = STOP;
       // lcd.clear();
       // lcd.setCursor(0, 1);
@@ -648,6 +649,7 @@ bool driveStraight(float distToGo){
     newRightSpeed = baseRightSpeed_120 + encoderError;
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
     distTraveled = returnDistance();
+    lcd.print(newLeftSpeed);
     //return false;
   }
   // else{
