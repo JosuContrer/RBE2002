@@ -203,8 +203,8 @@ void loop() {
 
       gyro = (int) euler.x();
       proportionalVal = turnPID.calc(gyro, desiredGyro);
-      newLeftSpeed = baseLeftSpeed - proportionalVal;
-      newRightSpeed = baseRightSpeed + proportionalVal;
+      newLeftSpeed = 0 - proportionalVal;
+      newRightSpeed = 0 + proportionalVal;
       driveTrain.setPower(newLeftSpeed, newRightSpeed);
 
       lcd.setCursor(0, 0);
@@ -332,16 +332,16 @@ int turnInitialize(int turnDir){
  * Driving control
  */
 void driveFollow(){
-  int count=millis()%2;
-  if(count == 1){
-    frontUltraVal = frontLeftUltra.avg();
-  }
-  else if(count==0){
-    backUltraVal = backLeftUltra.avg();
-  }
+  // int count=millis()%2;
+  // if(count == 1){
+  //   frontUltraVal = frontLeftUltra.avg();
+  // }
+  // else if(count==0){
+  //   backUltraVal = backLeftUltra.avg();
+  // }
   //If front ultrasonic triggered (wall in front)
-  Serial.println(frontUltra.avg());
-  if (frontUltra.avg()<15){
+  //Serial.println(frontUltra.avg());
+  if(frontUltra.avg() < 15){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 0);
@@ -354,30 +354,19 @@ void driveFollow(){
 
     turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
-  // else if(frontUltraVal > 15 && backUltraVal > 15){
-  //   lcd.clear();          //COMBAK: Remove this, for testing
-  //   lcd.setCursor(0, 0);
-  //   lcd.print("NO Wall");
-  //   bool reachedDistance = driveStraight(10);
-  //   if(reachedDistance){
-  //     turnLeft = turnInitialize(LEFT);
-  //   }else{
-  //     return;
-  //   }
+
+  //TODO: Test out line sensor code/values
+  //If line sensor triggered
+  // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
+  //   driveTrain.setPower(0, 0);
+  //   calcXandY();
+  //   char message[] = "Left/Right Motor Speeds";
+  //   printLCD(x,y,message);
+  //   //change to new switch case here, will need to turn now
   // }
-  //
-  // //TODO: Test out line sensor code/values
-  // //If line sensor triggered
-  // // if (qtraSix.readLine(sensors) > 100){ //have this if statement be if line follower is triggered
-  // //   driveTrain.setPower(0, 0);
-  // //   calcXandY();
-  // //   char message[] = "Left/Right Motor Speeds";
-  // //   printLCD(x,y,message);
-  // //   //change to new switch case here, will need to turn now
-  // // }
-  //
-  // //If flame sensor senses
-  // fire
+
+  //If flame sensor senses
+  //fire
   else if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
    state = FLAME;
@@ -398,8 +387,8 @@ void driveFollow(){
  */
 void followWall(){
   //set base speeds
-  baseRightSpeed =baseRightSpeed_120;
-  baseLeftSpeed = baseLeftSpeed_120;
+  baseRightSpeed =150;
+  baseLeftSpeed = 150;
 
   //ping ultrasonics in succession
   int count=millis()%2;
@@ -414,12 +403,27 @@ void followWall(){
     // TESTING //
     /////////////
     /////////////
-  Serial.print("Left: ");
-  Serial.println(frontUltraVal);
-  Serial.print("Right: ");
-  Serial.println(backUltraVal);
+  // Serial.print("Left: ");
+  // Serial.println(frontUltraVal);
+  // Serial.print("Right: ");
+  // Serial.println(backUltraVal);
 
-
+  if(frontUltraVal > 15){
+    lcd.clear();          //COMBAK: Remove this, for testing
+    lcd.setCursor(0, 1);
+    lcd.print("NO Wall");
+    bool reachedDistance = driveStraight(10);
+    //if(reachedDistance){
+      //turnLeft = turnInitialize(LEFT);
+      //state = STOP;
+      // lcd.clear();
+      // lcd.setCursor(0, 1);
+      // lcd.print("Stopped");
+    turnInitialize(LEFT);
+    // }else{
+    //   return;
+    // }
+  }
 
   //PID control
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
@@ -628,8 +632,11 @@ bool driveStraight(float distToGo){
   // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   // int gyroError = gyroPID.calc(gyro, euler.x());
   // gyro=euler.x();
+  lcd.setCursor(0,1);
+  lcd.print("in Drive straight");
   float distTraveled = returnDistance();
-  if(distTraveled < distToGo){
+  float finalDistance = distTraveled + distToGo;
+  while(distTraveled < finalDistance){
 
     //Encoder PID
     int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
@@ -640,11 +647,12 @@ bool driveStraight(float distToGo){
     newLeftSpeed = baseLeftSpeed_120 - encoderError;
     newRightSpeed = baseRightSpeed_120 + encoderError;
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
-    return false;
+    distTraveled = returnDistance();
+    //return false;
   }
-  else{
-    return true;
-  }
+  // else{
+  return true;
+  // }
 }
 
 double returnDistance(){
