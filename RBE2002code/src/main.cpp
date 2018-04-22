@@ -477,8 +477,9 @@ void followWall(){
   //PID control
   int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-  newLeftSpeed = baseLeftSpeed - .5*proportionalVal+ .25*encoderError;
-  newRightSpeed = baseRightSpeed + .5*proportionalVal+.25*encoderError;
+  int wallDist = driveStraightPID.calc(15,(frontUltraVal+backUltraVal)/2);
+  newLeftSpeed = baseLeftSpeed - .75*proportionalVal- .25*encoderError-.1*wallDist;
+  newRightSpeed = baseRightSpeed + .75*proportionalVal+.25*encoderError+.1*wallDist;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
