@@ -32,10 +32,12 @@
 bool blowing = false; //For Flame state in order to know if the candle is out or not
 bool goToFlame = false;
 int turnLeft = 1;
+bool cliff = false;
+
 //////////////////////////
 //State diagram control //
 //////////////////////////
-enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME, TURNRIGHTLINE} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -83,6 +85,8 @@ void driveToFlame();
 bool driveStraight(float);
 double returnDistance();
 void islandTurn();
+bool isSensorCliff();
+
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -231,6 +235,9 @@ void loop() {
         if(turnLeft){
           islandTurn();
         }
+        if(cliff){
+          driveStraight(400);
+        }
         else{
           state=WALLFOLLOW;
         }
@@ -289,8 +296,20 @@ void loop() {
         state = FLAME;
       }
       break;
-     }
 
+     case TURNRIGHTLINE:
+      //TODO:
+        turnInitialize(RIGHT);
+        driveStraight(100);
+        if(frontUltra.avg() < 15){
+          goToFlame = false; //not in flame
+          turnLeft = false;
+          cliff = false;
+          turnInitialize(RIGHT);
+        }
+        break;
+
+}
 }
 
 
@@ -333,6 +352,10 @@ int turnInitialize(int turnDir){
  * Driving control
  */
 void driveFollow(){
+  if(isSensorCliff()){
+    state = TURNRIGHTLINE;
+    cliff = true;
+  }
   // int count=millis()%2;
   // if(count == 1){
   //   frontUltraVal = frontLeftUltra.avg();
@@ -670,4 +693,14 @@ void islandTurn(){
   turnInitialize(LEFT);
   driveStraight(6);
   turnLeft = 0;
+}
+
+bool isSensorCliff(){
+  if(qtraSix.readLine(sensors) > 100){
+    driveTrain.setPower(0, 0);
+    calcXandY();
+    return true;
+  }else{
+    return false;
+  }
 }
