@@ -21,8 +21,8 @@
 //////////////
 //CONSTANTS //
 //////////////
-#define baseLeftSpeed_120 200
-#define baseRightSpeed_120 200
+#define baseLeftSpeed_120 170
+#define baseRightSpeed_120 170
 #define OFFSET_HEIGHT 6 //TODO: This is the number of inches the flame sensor is off the ground
 #define CENTERVAL_X 511.5 //TODO: Position of flame sensor so at center of x range
 
@@ -198,7 +198,8 @@ void loop() {
 
     case STOP:
       driveTrain.setPower(0, 0);
-      //lcd.print(fireSensor.getx());
+      lcd.setCursor(0,0);
+      lcd.print(digitalRead(LINEFOLLOWER));
       break;
 
     case TURN: //REVIEW:
@@ -419,6 +420,9 @@ int turnInitialize(int turnDir){
 void driveFollow(){
   if(isSensorCliff()){
     state = TURNRIGHTLINE;
+    lcd.setCursor(5,1);
+    lcd.print("line");
+    delay(400);
     cliff = true;
   }
   // int count=millis()%2;
@@ -433,8 +437,9 @@ void driveFollow(){
   if(frontUltra.avg() < 15){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(0, 0);
+    lcd.setCursor(5, 1);
     lcd.print("FRONT ULTRA TRIGGERED");
+    delay(400);
     calcXandY(); //Calculate x and y
 
     //FOR TESTING: Print x and y value
@@ -461,6 +466,9 @@ void driveFollow(){
     //state = FLAME;
     //centerFlameX();  //center flame in x direction
     //driveToFlame();
+    lcd.setCursor(5,1);
+    lcd.print("flame");
+    delay(300);
     state = TRAVELTOFLAME;
     return;
     //}
@@ -521,10 +529,28 @@ void followWall(){
   //PID control
   int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-  int wallDist = driveStraightPID.calc(20,(frontUltraVal+backUltraVal)/2);
-  newLeftSpeed = baseLeftSpeed - .35*proportionalVal- .15*encoderError-.1*wallDist;
-  newRightSpeed = baseRightSpeed + .35*proportionalVal+.15*encoderError+.1*wallDist;
+  int wallDist = driveStraightPID.calc(15,(frontUltraVal+backUltraVal)/2);
+  newLeftSpeed = baseLeftSpeed - proportionalVal;
+  newRightSpeed = baseRightSpeed + proportionalVal;
+  if (newLeftSpeed>255){
+    newLeftSpeed=255;
+  }
+  if (newRightSpeed>255){
+    newRightSpeed=255;
+  }
+  if (newLeftSpeed<0){
+    newLeftSpeed=0;
+  }
+  if (newRightSpeed<0){
+    newRightSpeed=0;
+  }
+
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
+  lcd.setCursor(0,1);
+  lcd.print(newLeftSpeed);
+  lcd.setCursor(10,1);
+  lcd.print(newRightSpeed);
+
 }
 
 
@@ -750,15 +776,8 @@ void islandTurn(int distance){
 }
 
 bool isSensorCliff(){
-  // if(qtraSix.readLine(sensors) > 2000){
-  //   driveTrain.setPower(0, 0);
-  //   calcXandY();
-  //   return true;
-  // }else{
-  //   return false;
-  // }
-  //
-  return digitalRead(LINEFOLLOWER) ? true : false;
 
-  //}
+  return digitalRead(LINEFOLLOWER);
+
+
 }
