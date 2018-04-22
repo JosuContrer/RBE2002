@@ -138,8 +138,8 @@ void setup() {
   driveTrain.initialize();
 
   //PIDs
-  driveStraightPID.setpid(30,.1,.02); //PID to drive straight  //was 30
-  turnPID.setpid(13,.2,.02); //PID for turning
+  driveStraightPID.setpid(50,.2,.02); //PID to drive straight  //was 30
+  turnPID.setpid(30,.2,.02); //PID for turning
   centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
   encoderPID.setpid(.1, 0, 0);
   gyroPID.setpid(10, 0, 0);
@@ -311,21 +311,23 @@ void loop() {
         }
         break;
     case DRIVESTRAIGHT:
-
+    lcd.setCursor(0,0);
+      lcd.print("DRIVESTRAIGHT");
       if(distTraveled < finalDistance){
 
         //Encoder PID
         int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
 
-
         //Complimentary Filter
         //int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
-        newLeftSpeed = baseLeftSpeed_120 - encoderError;
-        newRightSpeed = baseRightSpeed_120 + encoderError;
+        newLeftSpeed = baseLeftSpeed - encoderError;
+        newRightSpeed = baseRightSpeed + encoderError;
         driveTrain.setPower(newLeftSpeed, newRightSpeed);
-
-        lcd.print(newLeftSpeed);
-
+        lcd.setCursor(0,1);
+        lcd.print(distTraveled);
+        lcd.setCursor(10,1);
+        lcd.print(finalDistance);
+        distTraveled = returnDistance();
         //delay(100);
       }
        else{
@@ -455,7 +457,7 @@ void followWall(){
   // Serial.print("Right: ");
   // Serial.println(backUltraVal);
 
-  if(frontUltraVal > 15){
+  if(frontUltraVal > 25){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 1);
     lcd.print("NO Wall");
@@ -473,9 +475,10 @@ void followWall(){
   }
 
   //PID control
+  int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   proportionalVal = driveStraightPID.calc(frontUltraVal, backUltraVal);
-  newLeftSpeed = baseLeftSpeed - proportionalVal;
-  newRightSpeed = baseRightSpeed + proportionalVal;
+  newLeftSpeed = baseLeftSpeed - .5*proportionalVal+ .25*encoderError;
+  newRightSpeed = baseRightSpeed + .5*proportionalVal+.25*encoderError;
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
