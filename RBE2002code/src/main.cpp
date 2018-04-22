@@ -86,7 +86,7 @@ bool centerFlameX();
 void driveToFlame();
 bool driveStraight(float);
 double returnDistance();
-void islandTurn();
+void islandTurn(int);
 bool isSensorCliff();
 
 ////////////////////
@@ -232,12 +232,12 @@ void loop() {
       if(abs(desiredGyro - gyro)<5){
 
         if(goToFlame){
-          state = TRAVELTOFLAME;
+          driveStraight(400);
         }
-        if(turnLeft){
-          islandTurn();
+        else if(turnLeft){
+          islandTurn(20);
         }
-        if(cliff){
+        else if(cliff){
           driveStraight(400);
         }
         else{
@@ -292,11 +292,14 @@ void loop() {
       }
       break;
     case TRAVELTOFLAME:
-      driveStraight(10);
-      if(fireSensor.isFire()){
-        driveTrain.setPower(0,0);
-        state = FLAME;
-      }
+      // //driveStraight(10);
+      // if(fireSensor.isFire()){
+      //   driveTrain.setPower(0,0);
+      //   state = FLAME;
+      // }
+      goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
+      //turnInitialize(RIGHT);
+      driveStraight(5);
       break;
 
      case TURNRIGHTLINE:
@@ -311,10 +314,14 @@ void loop() {
         }
         break;
     case DRIVESTRAIGHT:
-    lcd.setCursor(0,0);
+      lcd.setCursor(0,0);
       lcd.print("DRIVESTRAIGHT");
       if(distTraveled < finalDistance){
-
+        //islandTurn = true;
+        if(fireSensor.isFire()){
+          driveTrain.setPower(0,0);
+          state = FLAME;
+        }
         //Encoder PID
         int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
 
@@ -330,9 +337,15 @@ void loop() {
         distTraveled = returnDistance();
         //delay(100);
       }
+
        else{
-       turnInitialize(LEFT);//TODO
+         if(goToFlame){
+           turnInitialize(RIGHT);
+         }else{
+         turnInitialize(LEFT);//TODO
        }
+       }
+       break;
 
 }
 }
@@ -418,9 +431,10 @@ void driveFollow(){
   //fire
   else if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
-   state = FLAME;
+    //state = FLAME;
     //centerFlameX();  //center flame in x direction
     //driveToFlame();
+    state = TRAVELTOFLAME;
     return;
     //}
   }
@@ -461,7 +475,10 @@ void followWall(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 1);
     lcd.print("NO Wall");
-    driveStraight(10);
+    // turnLeft = true;
+    // driveStraight(10);
+    islandTurn(10);
+
     //if(reachedDistance){
     //turnLeft = turnInitialize(LEFT);
       //state = STOP;
@@ -657,18 +674,11 @@ bool centerFlameX(){
  * Drive past flame by width of robot, then initialize turn
  * NOTE: This will go to TRAVELTOFLAME
  */
-void driveToFlame(){
-  unsigned long drivePast = leftEncTicks + 100;
-
-  //Drive past flame
-  if(leftEncTicks < drivePast){
-    driveTrain.setPower(200, 200);
-  }
-  else{
-    goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
-    turnInitialize(RIGHT);
-  }
-}
+ void driveToFlame(){
+   goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
+   //turnInitialize(RIGHT);
+   driveStraight(5);
+ }
 
 
 /**
@@ -699,12 +709,13 @@ double returnDistance(){
   //TODO: For final distance, must use ultrasonic to get distance from robot to candle
 }
 
-void islandTurn(){
-  driveStraight(10);
+void islandTurn(int distance){
   turnLeft = true;
-  turnInitialize(LEFT);
-  driveStraight(6);
-  turnLeft = false;
+   driveStraight(distance);
+  // turnLeft = true;
+  // turnInitialize(LEFT);
+  //driveStraight(20);
+  //turnLeft = false;
 }
 
 bool isSensorCliff(){

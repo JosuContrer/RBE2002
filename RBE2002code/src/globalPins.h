@@ -52,7 +52,7 @@
 /////////
 // FAN //
 /////////
-#define FANPIN 28
+#define FANPIN 12
 #define FANSERVOPIN 8
 
 #endif
