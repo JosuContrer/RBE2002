@@ -37,7 +37,7 @@ bool cliff = false;
 //////////////////////////
 //State diagram control //
 //////////////////////////
-enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME, TURNRIGHTLINE} state;
+enum State {STOP, WALLFOLLOW,TURN, FLAME, TRAVELTOFLAME, TURNRIGHTLINE,DRIVESTRAIGHT} state;
 enum State2 {STOPROBOT, START} startStop;
 enum pidSelect {WALL,TURNING} pidSel;
 enum turner {LEFT,RIGHT} turnDir;
@@ -60,6 +60,8 @@ int newLeftSpeed;
 int newRightSpeed;
 float gyro;
 bool returnHome;
+float distTraveled;
+float finalDistance;
 MotorStates testMotor;
 
 ////////////////////////
@@ -308,6 +310,27 @@ void loop() {
           turnInitialize(RIGHT);
         }
         break;
+    case DRIVESTRAIGHT:
+
+      if(distTraveled < finalDistance){
+
+        //Encoder PID
+        int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+
+
+        //Complimentary Filter
+        //int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
+        newLeftSpeed = baseLeftSpeed_120 - encoderError;
+        newRightSpeed = baseRightSpeed_120 + encoderError;
+        driveTrain.setPower(newLeftSpeed, newRightSpeed);
+
+        lcd.print(newLeftSpeed);
+
+        //delay(100);
+      }
+       else{
+       turnInitialize(LEFT);//TODO
+       }
 
 }
 }
@@ -436,14 +459,14 @@ void followWall(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 1);
     lcd.print("NO Wall");
-    bool reachedDistance = driveStraight(10);
+    driveStraight(10);
     //if(reachedDistance){
     //turnLeft = turnInitialize(LEFT);
       //state = STOP;
       // lcd.clear();
       // lcd.setCursor(0, 1);
       // lcd.print("Stopped");
-    turnInitialize(LEFT);
+  //  turnInitialize(LEFT);
     // }else{
     //   return;
     // }
@@ -658,26 +681,10 @@ bool driveStraight(float distToGo){
   // gyro=euler.x();
   lcd.setCursor(0,1);
   lcd.print("in Drive straight");
-  float distTraveled = returnDistance();
-  float finalDistance = distTraveled + distToGo;
-  while(distTraveled < finalDistance){
+  distTraveled = returnDistance();
+  finalDistance = distTraveled + distToGo;
+  state=DRIVESTRAIGHT;
 
-    //Encoder PID
-    int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-
-
-    //Complimentary Filter
-    //int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
-    newLeftSpeed = baseLeftSpeed_120 - encoderError;
-    newRightSpeed = baseRightSpeed_120 + encoderError;
-    driveTrain.setPower(newLeftSpeed, newRightSpeed);
-    distTraveled = returnDistance();
-    lcd.print(newLeftSpeed);
-    //return false;
-  }
-  // else{
-  return true;
-  // }
 }
 
 double returnDistance(){
@@ -690,9 +697,10 @@ double returnDistance(){
 
 void islandTurn(){
   driveStraight(10);
+  turnLeft = true;
   turnInitialize(LEFT);
   driveStraight(6);
-  turnLeft = 0;
+  turnLeft = false;
 }
 
 bool isSensorCliff(){
