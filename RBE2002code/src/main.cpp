@@ -306,7 +306,7 @@ void loop() {
       // }
       goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
       //turnInitialize(RIGHT);
-      driveStraight(5);
+      driveStraight(10);
       break;
 
      case TURNRIGHTLINE:
@@ -323,21 +323,21 @@ void loop() {
       // lcd.print("DRIVESTRAIGHT");
       if(distTraveled < finalDistance){
         //islandTurn = true;
-        if(fireSensor.isFire()){
-          driveTrain.setPower(0,0);
-          state = FLAME;
-        }
-        else if(isSensorCliff()){
+        // if(fireSensor.isFire()){
+        //   driveTrain.setPower(0,0);
+        //   state = FLAME;
+        // }
+         if(isSensorCliff()){
           driveTrain.setPower(0,0);
           state = TURNRIGHTLINE;
         }
-        else if(frontUltra.avg() < 15){
+        else if(frontUltra.avg() < 15 && !goToFlame){
           goToFlame = false; //not in flame
           turnLeft = false;
           cliff = false;
           turnInitialize(RIGHT);
         }
-        else if(frontLeftUltra.avg() < 25){
+        else if(frontLeftUltra.avg() < 25 && !goToFlame){
           state = WALLFOLLOW;
         }
         //Encoder PID
@@ -470,7 +470,7 @@ void driveFollow(){
     lcd.print("flame");
     delay(300);
     state = TRAVELTOFLAME;
-    return;
+    //return;
     //}
   }
    else{
