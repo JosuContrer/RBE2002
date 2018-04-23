@@ -48,7 +48,8 @@
 #define addrCalibratedMinimumOn 0
 #define addrCalibratedMaximumOn 100
 
-#define LINEFOLLOWER A2
+#define LINEFOLLOWERONE 4
+#define LINEFOLLOWERTWO 5
 
 
 /////////
