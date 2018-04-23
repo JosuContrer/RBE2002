@@ -55,7 +55,7 @@ int baseLeftSpeed = baseLeftSpeed_120;
 unsigned int sensors[3];
 int frontUltraVal=0;
 int backUltraVal=0;
-float proportionalVal;
+float pValLeft,pValRight,proportionalVal;
 int newLeftSpeed;
 int newRightSpeed;
 float gyro;
@@ -563,10 +563,10 @@ void followWall(){
 
   //PID control
 
-  proportionalVal = driveStraightPID.calc(15, backUltraVal);
-  proportionalVal = driveStraightPID.calc(15, frontUltraVal);
-  newLeftSpeed = baseLeftSpeed;
-  newRightSpeed = baseRightSpeed;
+  pValRight = driveStraightPID.calc(15,frontUltraVal );
+  pValLeft = driveStraightPID.calc(15, backUltraVal);
+  newLeftSpeed = baseLeftSpeed+pValLeft;
+  newRightSpeed = baseRightSpeed+pValRight;
   //if (newLeftSpeed>255){
   //  newLeftSpeed=255;
   //}
