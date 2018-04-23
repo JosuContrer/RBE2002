@@ -91,6 +91,7 @@ void islandTurn(int);
 bool isSensorCliff();
 bool wallFound = false;
 double gyroLookUp(double);
+void turn(int);
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -141,7 +142,7 @@ void setup() {
 
   //PIDs
   driveStraightPID.setpid(48,.5,.05); //PID to drive straight  //was 30
-  turnPID.setpid(15,.3,.01); //PID for turning //was 13
+  turnPID.setpid(100,.3,.01); //PID for turning //was 13
   centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
   encoderPID.setpid(.1, 0, 0);
   gyroPID.setpid(4.5, 0, 0.01);
@@ -215,63 +216,19 @@ void loop() {
       * IDEA                                                                       *
       * Turning should have its own PID, and it should not be based on ultrasonics *
       ******************************************************************************/
-      leftEncTicks = 0;
-      rightEncTicks = 0;
-
-      gyro = (int) euler.x();
-      //proportionalVal = turnPID.calc(desiredGyro, gyro);
-        // newLeftSpeed = 0 - proportionalVal;
-        // newRightSpeed = 0 + proportionalVal;
-        //
-      if(turnLeft){
-        newLeftSpeed = -120;
-        newRightSpeed = 120;
+      turn(turnLeft);
+      if(goToFlame){
+        driveStraight(400);
+      }
+      else if(turnLeft){
+        islandTurn(20);
+      }
+      else if(cliff){
+        driveStraight(400);
       }
       else{
-        newLeftSpeed = 120;
-        newRightSpeed = -120;
-      }
-
-      driveTrain.setPower(newLeftSpeed, newRightSpeed);
-
-      lcd.setCursor(0, 0);
-      lcd.print("TURNING");
-      lcd.setCursor(0, 1);
-      lcd.print(gyro);
-      lcd.setCursor(10, 1);
-      lcd.print(desiredGyro);
-      lcd.setCursor(10, 0);
-      lcd.print(abs(desiredGyro - gyro));
-
-      // Serial.print("Gyro: ");
-      // Serial.println(gyro);
-      // Serial.print("desiredGyro: ");
-      // Serial.println(desiredGyro);
-      // Serial.print("Difference: ");
-      // Serial.println(abs(gyro - desiredGyro));
-
-      // if (abs(frontLeftUltra.avg()-backLeftUltra.avg())<=2 && !turnLeft && !cliff && !goToFlame){
-      //   wallFound = true;
-      // }
-      if(abs(desiredGyro - gyro)<6){
-        // driveTrain.setPower(0, 0); //COMBAK: Remove these lines
-        // delay(5000);
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Finished turning");
-        if(goToFlame){
-          driveStraight(400);
-        }
-        else if(turnLeft){
-          islandTurn(20);
-        }
-        else if(cliff){
-          driveStraight(400);
-        }
-        else{
-          state=WALLFOLLOW;
-          wallFound=false;
-        }
+        state=WALLFOLLOW;
+        wallFound=false;
       }
       break;
 
@@ -851,19 +808,19 @@ void turn(int turnLeft){
   rightEncTicks = 0;
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   int currentAngle = (int) euler.x() % 360;
-  while(abs(desiredGyro - currentAngle)<6){
+  while(currentAngle != desiredGyro){
 
     proportionalVal = turnPID.calc(currentAngle, desiredGyro);
     // newLeftSpeed = 0 - proportionalVal;
     // newRightSpeed = 0 + proportionalVal;
     //
-    if(turnLeft){
-      newLeftSpeed = -1 * proportionalVal;
-      newRightSpeed = proportionalVal;
+  if(!turnLeft){
+      newLeftSpeed = -120 + (-1 * proportionalVal);
+      newRightSpeed = 120 + proportionalVal;
     }
     else{
-      newLeftSpeed = proportionalVal;
-      newRightSpeed = -1* proportionalVal;
+      newLeftSpeed = 120 + proportionalVal;
+      newRightSpeed = -120 + (-1* proportionalVal);
     }
 
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
@@ -871,11 +828,11 @@ void turn(int turnLeft){
     lcd.setCursor(0, 0);
     lcd.print("TURNING");
     lcd.setCursor(0, 1);
-    lcd.print(gyro);
+    lcd.print(currentAngle);
     lcd.setCursor(10, 1);
     lcd.print(desiredGyro);
     lcd.setCursor(10, 0);
-    lcd.print(abs(desiredGyro - gyro));
+    lcd.print(abs(desiredGyro - currentAngle));
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     currentAngle = (int) euler.x() % 360;
   }
@@ -885,17 +842,4 @@ void turn(int turnLeft){
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Finished turning");
-  if(goToFlame){
-    driveStraight(400);
-  }
-  else if(turnLeft){
-    islandTurn(20);
-  }
-  else if(cliff){
-    driveStraight(400);
-  }
-  else{
-    state=WALLFOLLOW;
-    wallFound=false;
-  }
 }
