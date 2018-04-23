@@ -2,6 +2,7 @@
 #define FIRESENSOR_h
 
 #include "Arduino.h"
+#include "Fan.h"
 
 /***************************************************************************************************
  * Wii Remote IR sensor  test sample code  by kako http://www.kako.com                             *
@@ -14,6 +15,7 @@
 /*******************************************
  * FireSensor class to control fire sensor *
  *******************************************/
+
 
 class FireSensor{
 public:

@@ -32,7 +32,7 @@
 #define FRONTLEFTULTRATRIG 24
 #define FRONTLEFTULTRAECHO 25
 
-#define FRONTULTRATRIG 10
+#define FRONTULTRATRIG 11
 #define FRONTULTRAECHO 9
 
 #define SIDEULTRATRIG 17
@@ -55,6 +55,6 @@
 /////////
 // FAN //
 /////////
-#define FANPIN 28
+#define FANPIN 10
 #define FANSERVOPIN 8
 #endif

@@ -18,7 +18,7 @@
 //////////////////////
 extern Servo fanServo;
 PID centerFan;
-
+Fan fan;
 
 /////////////////
 // Constructor //
@@ -201,7 +201,7 @@ bool FireSensor::centerHeight(){
 */
 void FireSensor::blowOutCandle(){
   //if(isFire()){
-    fanState(ON); //turns fan on
+  fan.maxPower(true); //turns fan on
   //}
 
   //have fan oscillate up and down in order to be sure to extinguish flame
@@ -212,7 +212,8 @@ void FireSensor::blowOutCandle(){
   * Do NOT run this code until the range is determined, otherwise the servo will try and go the *
   * full 180 degrees and make either stall the servo or break something on the robot            *
   ***********************************************************************************************/
-  //oscillate(3);
+  oscillate(3);
+  fan.maxPower(false);
 }
 
 void FireSensor::oscillate(int count){

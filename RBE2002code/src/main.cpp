@@ -111,12 +111,14 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
-Fan fan;
+extern Fan fan;
 
 //////////////////////
 //Arduino Functions //
 //////////////////////
 void setup() {
+  fan.initialize();
+
   state = WALLFOLLOW; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
@@ -137,7 +139,7 @@ void setup() {
   setupIMU();
   fireSensor.initialize();
   //calibrateLineSensor(); //TODO: Record values into memory
-  fan.initialize();
+
   driveTrain.initialize();
 
   //PIDs
@@ -154,19 +156,23 @@ void setup() {
   //TESTING
   testMotor.initialize();
 
+
+
 }
 
 
 void loop() {
   //testMotor.motorDrive(STOP2);
-  fan.setPower(100);
-  delay(500)
+  fan.maxPower(true);
+  // delay(30000);
+  // fan.maxPower(false);
+  // delay(30000);
 
 
 
  // driveTrain.setPower(255, 255);
  // lcd.print(leftEncTicks);
-  //Serial.println(leftEncTicks);
+  //Serial.println(frontLeftUltra.avg());
 
 
 //    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
