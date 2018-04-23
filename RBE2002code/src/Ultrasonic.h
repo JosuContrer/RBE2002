@@ -11,6 +11,7 @@ public:
 	void initialize();
 	int readDistance();
 	int avg();
+	void clear();
 
 
 private:

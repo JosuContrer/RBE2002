@@ -23,14 +23,14 @@ void Fan::initialize(){
   bladeMotor.write(10);
 }
 
-/**
-* Initializes both the digital pin for the fan and the servo to move the fan
-*/
-void fanInitialize(){
-  pinMode(FANPIN, OUTPUT);
-  digitalWrite(FANPIN, LOW);
-  fanServo.attach(FANSERVOPIN);
-}
+// /**
+// * Initializes both the digital pin for the fan and the servo to move the fan
+// */
+// void fanInitialize(){
+//   pinMode(FANPIN, OUTPUT);
+//   digitalWrite(FANPIN, LOW);
+//   fanServo.attach(FANSERVOPIN);
+// }
 
 /**
 * Sets the blade power

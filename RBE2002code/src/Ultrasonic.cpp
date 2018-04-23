@@ -91,4 +91,9 @@ int Ultrasonic::readDistance(){
 
    return avg;
  }
- 
+
+ void Ultrasonic::clear(){
+   for(int i = 0; i < 10; i++){
+     savedReads[i] = 50;
+   }
+ }

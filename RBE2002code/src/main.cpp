@@ -111,7 +111,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
-
+Fan fan;
 
 //////////////////////
 //Arduino Functions //
@@ -137,7 +137,7 @@ void setup() {
   setupIMU();
   fireSensor.initialize();
   //calibrateLineSensor(); //TODO: Record values into memory
-  fanInitialize();
+  fan.initialize();
   driveTrain.initialize();
 
   //PIDs
@@ -158,24 +158,25 @@ void setup() {
 
 
 void loop() {
-
   //testMotor.motorDrive(STOP2);
+  fan.setPower(100);
+  delay(500)
 
-  followWall();
 
- // driveStraight(100);
+
  // driveTrain.setPower(255, 255);
  // lcd.print(leftEncTicks);
   //Serial.println(leftEncTicks);
- // turnInitialize(LEFT);
 
-   // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
-   // gyro = euler.x(); //x value of IMU
+
+//    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
+//    gyro = euler.x(); //x value of IMU
+//    frontUltraVal = frontLeftUltra.avg();
 //   //Serial.println(gyro);
 //   fireSensor.useSensor(); //save flame sensor values to array
 //
 //   //Emergency start/stop button
-   //debouncer.update();
+//    debouncer.update();
 //   if(debouncer.risingEdge()){
 //     switch(startStop){
 //       case STOPROBOT:
@@ -211,8 +212,6 @@ void loop() {
 //
 //     case STOP:
 //       driveTrain.setPower(0, 0);
-//       lcd.setCursor(0,0);
-//       lcd.print(digitalRead(LINEFOLLOWER));
 //       break;
 //
 //     case TURN: //REVIEW:
@@ -281,36 +280,34 @@ void loop() {
 //         //}
 //       }
 //       break;
-//     case TRAVELTOFLAME:
-//       // //driveStraight(10);
-//       // if(fireSensor.isFire()){
-//       //   driveTrain.setPower(0,0);
-//       //   state = FLAME;
-//       // }
-//       goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
-//       //turnInitialize(RIGHT);
-//       driveStraight(10);
-//       break;
+//     // case TRAVELTOFLAME:
+//     //   // //driveStraight(10);
+//     //   // if(fireSensor.isFire()){
+//     //   //   driveTrain.setPower(0,0);
+//     //   //   state = FLAME;
+//     //   // }
+//     //   goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
+//     //   //turnInitialize(RIGHT);
+//     //   driveStraight(10);
+//     //   break;
 //
-//      case TURNRIGHTLINE:
-//       //TODO:
-//         driveTrain.setPower(-100, -100);
-//         delay(1000);
-//         driveTrain.setPower(0, 0);
-//         cliff = true;
-//         turnInitialize(RIGHT);
-//         //driveStraight(100);
-//         break;
+//      // case TURNRIGHTLINE:
+//      //  //TODO:
+//      //    driveTrain.setPower(-100, -100);
+//      //    delay(1000);
+//      //    driveTrain.setPower(0, 0);
+//      //    cliff = true;
+//      //    turnInitialize(RIGHT);
+//      //    //driveStraight(100);
+//      //    break;
 //     case DRIVESTRAIGHT:
-//       float gyroPercentage = .5;
-//       float encoderPercentage = .5;
+//
 //
 //     //delay(500);
-//       baseLeftSpeed=baseLeftSpeed_120;
-//       baseRightSpeed=baseRightSpeed_120;
+//
 //       // lcd.setCursor(0,0);
 //       // lcd.print("DRIVESTRAIGHT");
-//       if(distTraveled < finalDistance){
+//       while(distTraveled < finalDistance){
 //         //islandTurn = true;
 //         // if(fireSensor.isFire()){
 //         //   driveTrain.setPower(0,0);
@@ -330,7 +327,11 @@ void loop() {
 //           state = WALLFOLLOW;
 //         }
 //         //Encoder PID
-//         int encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+//         float gyroPercentage = .1;
+//         float encoderPercentage = .9;
+//         float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+//         lcd.setCursor(0,0);
+//         lcd.print(leftEncTicks);
 //
 //         //Gyro PID
 //         imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -349,7 +350,7 @@ void loop() {
 //         //delay(100);
 //       }
 //
-//        else{
+//
 //          if(goToFlame){
 //            turnInitialize(RIGHT);
 //          }
@@ -363,7 +364,7 @@ void loop() {
 //             turns=0;
 //             state=WALLFOLLOW;
 //           }
-//        }
+//
 //        break;
 //
 // }
@@ -390,7 +391,8 @@ int turnInitialize(int turnDir){
       desiredGyro= ((int) euler.x() + 270) % 360;
 
       turnLeft = true;
-      state=TURN;
+      //state=TURN;
+      turn(turnLeft);
       break;
     case RIGHT:
 
@@ -403,7 +405,8 @@ int turnInitialize(int turnDir){
       // if(desiredGyro > 360){
       //   desiredGyro =((int)gyro+90)-360;
       // }
-      state=TURN;
+      //state=TURN;
+      turn(turnLeft);
       break;
   }
   return turnDir;
@@ -435,7 +438,8 @@ void driveFollow(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(5, 1);
     lcd.print("FRONT ULTRA TRIGGERED");
-    delay(400);
+    //delay(400);
+    frontUltra.clear();
     calcXandY(); //Calculate x and y
 
     //FOR TESTING: Print x and y value
@@ -464,7 +468,7 @@ void driveFollow(){
     //driveToFlame();
     lcd.setCursor(5,1);
     lcd.print("flame");
-    delay(300);
+    //delay(300);
     state = TRAVELTOFLAME;
     //return;
     //}
@@ -507,9 +511,9 @@ void followWall(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(0, 1);
     lcd.print("NO Wall");
-    // turnLeft = true;
-    // driveStraight(10);
-    //islandTurn(10);
+     turnLeft = true;
+     //driveStraight(10);
+    islandTurn(10);
 
     //if(reachedDistance){
     //turnLeft = turnInitialize(LEFT);
@@ -745,30 +749,32 @@ bool driveStraight(float distToGo){
   //
   // lcd.setCursor(0,0);
   // lcd.print("in Drive straight");
-  // distTraveled = returnDistance();
-  // finalDistance = distTraveled + distToGo;
-  // state=DRIVESTRAIGHT;
+  baseLeftSpeed = 200;
+  baseRightSpeed = 200;
+   distTraveled = returnDistance();
+   finalDistance = distTraveled + distToGo;
+   state=DRIVESTRAIGHT;
+
   //COMBAK: New stuff added
-   baseLeftSpeed = 200;
-   baseRightSpeed = 200;
+
   // driveTrain.setPower(baseLeftSpeed, baseRightSpeed);
   // Serial.println(gyroError);
   //
   //
-  float gyroPercentage = .1;
-  float encoderPercentage = .9;
-  float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-  lcd.setCursor(0,0);
-  lcd.print(leftEncTicks);
-
-  //Gyro PID
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  int gyroError = gyroPID.calc(gyroLookUp(gyro), euler.x());
-  //Complimentary Filter
-  int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
-  newLeftSpeed = baseLeftSpeed - driveCompFilter;
-  newRightSpeed = baseRightSpeed + driveCompFilter;
-  driveTrain.setPower(newLeftSpeed, newRightSpeed);
+  // float gyroPercentage = .1;
+  // float encoderPercentage = .9;
+  // float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+  // lcd.setCursor(0,0);
+  // lcd.print(leftEncTicks);
+  //
+  // //Gyro PID
+  // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  // int gyroError = gyroPID.calc(gyroLookUp(gyro), euler.x());
+  // //Complimentary Filter
+  // int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
+  // newLeftSpeed = baseLeftSpeed - driveCompFilter;
+  // newRightSpeed = baseRightSpeed + driveCompFilter;
+  // driveTrain.setPower(newLeftSpeed, newRightSpeed);
 }
 
 double returnDistance(){
@@ -780,12 +786,15 @@ double returnDistance(){
 }
 
 void islandTurn(int distance){
+
   turnLeft = true;
-   driveStraight(distance);
+  driveStraight(distance);
   // turnLeft = true;
   // turnInitialize(LEFT);
-  //driveStraight(20);
-  //turnLeft = false;
+  // driveStraight(distance);
+  // turnInitialize(LEFT);
+  // driveStraight(20);
+  // turnLeft = false;
 }
 
 bool isSensorCliff(){
@@ -817,18 +826,19 @@ void turn(int turnLeft){
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   int currentAngle = (int) euler.x() % 360;
   while(currentAngle != desiredGyro){
-
-    proportionalVal = turnPID.calc(currentAngle, desiredGyro);
+    frontUltraVal = frontLeftUltra.avg();
+    //proportionalVal = turnPID.calc(currentAngle, desiredGyro);
+    proportionalVal = 0;
     // newLeftSpeed = 0 - proportionalVal;
     // newRightSpeed = 0 + proportionalVal;
     //
   if(!turnLeft){
-      newLeftSpeed = -120 + (-1 * proportionalVal);
-      newRightSpeed = 120 + proportionalVal;
+      newLeftSpeed = 120 + (-1 * proportionalVal);
+      newRightSpeed = -120 + proportionalVal;
     }
     else{
-      newLeftSpeed = 120 + proportionalVal;
-      newRightSpeed = -120 + (-1* proportionalVal);
+      newLeftSpeed = -120 + proportionalVal;
+      newRightSpeed = 120 + (-1* proportionalVal);
     }
 
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
@@ -850,4 +860,5 @@ void turn(int turnLeft){
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Finished turning");
+  driveTrain.setPower(0, 0);
 }
