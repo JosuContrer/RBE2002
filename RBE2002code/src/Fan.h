@@ -26,6 +26,7 @@ public:
   Fan();
   void initialize();
   void setPower(int pp);
+  void maxPower(bool allowed);
 
 private:
   Servo bladeMotor;

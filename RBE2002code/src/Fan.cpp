@@ -17,10 +17,12 @@ Fan::Fan(){}
 * the fan blade.
 */
 void Fan::initialize(){
-  bladeMotor.attach(FANPIN);
-  fanServo.attach(FANSERVOPIN);
   //In order for Speed Controller to intialize correct
+  bladeMotor.attach(FANPIN);
+  delay(1);
   bladeMotor.write(10);
+  delay(5000);
+  fanServo.attach(FANSERVOPIN);
 }
 
 /**
@@ -34,11 +36,23 @@ void fanInitialize(){
 
 /**
 * Sets the blade power
-* @param pp Integer that ranges from 0 to 100 for blade power
+* @param pp Integer that ranges from 0 to 180 for blade power
 */
 void Fan::setPower(int pp){
-  int ppn = map(pp,0,180,10,100); // More intuitixe to understand
-  bladeMotor.write(ppn);
+  //int ppn = map(pp,0,180,10,100); // More intuitixe to understand
+  bladeMotor.write(pp);
+}
+
+/**
+* Sets the blade power to the max of 10 m/s
+* @param allowed Boolean if true sets the fan on else fan off
+*/
+void Fan::maxPower(bool allowed){
+  if(allowed){
+    bladeMotor.write(100);
+  }else{
+    bladeMotor.write(10);
+  }
 }
 
 /**
@@ -47,11 +61,11 @@ void Fan::setPower(int pp){
 * @return Boolean true is in distance and false is still to far away
 *//*
 bool Fan::flameProximity(int dist){
-  if(frontUltra.avg() < dist){
-    return true;}
-    else{
-      return false;
-    }
+if(frontUltra.avg() < dist){
+return true;}
+else{
+return false;
+}
 }
 */
 
