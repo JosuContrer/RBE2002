@@ -97,3 +97,13 @@ int Ultrasonic::readDistance(){
      savedReads[i] = 39;
    }
  }
+
+ int Ultrasonic::avgTwo(){
+   int currentVal = readDistance();
+   if((currentVal - prevVal) > 6){
+     return prevVal;
+   }else{
+     prevVal = currentVal;
+     return currentVal;
+   }
+ }

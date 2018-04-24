@@ -12,10 +12,11 @@ public:
 	int readDistance();
 	int avg();
 	void clear();
-
+	int avgTwo();
 
 private:
   int trigPin;
   int echoPin;
 	int savedReads[10];
+	int prevVal;
 };

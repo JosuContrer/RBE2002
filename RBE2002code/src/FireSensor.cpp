@@ -214,6 +214,7 @@ void FireSensor::blowOutCandle(){
   ***********************************************************************************************/
   oscillate(3);
   fan.maxPower(false);
+  fanServo.write(80);
 }
 
 void FireSensor::oscillate(int count){
