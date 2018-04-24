@@ -243,7 +243,7 @@ void loop() {
       lcd.print(digitalRead(LINEFOLLOWERTWO));
       lcd.clear();
       lcd.setCursor(10,0);
-      lcd.print(frontUltra.avg());
+
       break;
 
     case TURN: //REVIEW:
@@ -430,20 +430,20 @@ void driveFollow(){
   // }
   //If front ultrasonic triggered (wall in front)
   lcd.clear();
-  lcd.print(frontUltra.avg());
-  if(frontUltra.avg() < 15){
-    driveTrain.setPower(0, 0); //Stop robot
-    lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(5, 1);
-    lcd.print("FRONT ULTRA TRIGGERED");
-    delay(2000);
-    //delay(400);
-    frontUltra.clear();
-    calcXandY(); //Calculate x and y
 
-
-    turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
-  }
+  // if(frontUltra.avg() < 15){
+  //   driveTrain.setPower(0, 0); //Stop robot
+  //   lcd.clear();          //COMBAK: Remove this, for testing
+  //   lcd.setCursor(5, 1);
+  //   lcd.print("FRONT ULTRA TRIGGERED");
+  //   delay(2000);
+  //   //delay(400);
+  //   frontUltra.clear();
+  //   calcXandY(); //Calculate x and y
+  //
+  //
+  //   turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
+  // }
 
   //TODO: Test out line sensor code/values
   //If line sensor triggered
@@ -457,7 +457,7 @@ void driveFollow(){
 
   //If flame sensor senses
   //fire
-  else if(fireSensor.isFire()){
+  if(fireSensor.isFire()){
     //if(sideUltra.avg() < 10){ //TODO: Test value to see distance for flame
     //state = FLAME;
     //centerFlameX();  //center flame in x direction
@@ -524,7 +524,16 @@ void followWall(){
     //   return;
     // }
   }
-  if(frontUltra.avg() < 5){
+  if(frontUltra.avg() < 15){
+    int count1=0,count2=0;
+    unsigned int time=millis();
+    while(time+100>millis()){
+      if(frontUltra.avg()<15){
+        count1++;
+      }
+      count2++;
+    }
+    if(count1==count2){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(5, 1);
@@ -535,7 +544,8 @@ void followWall(){
     calcXandY(); //Calculate x and y
 
 
-    turnInitialize(RIGHT);   //REVIEW: This should be moved to TURN because line followers uses it as well
+    turnInitialize(RIGHT);
+  }   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
 
   if(isSensorCliff()){
@@ -567,7 +577,7 @@ void followWall(){
   lcd.setCursor(0, 0);
   lcd.print(frontLeftUltra.avg());
   lcd.setCursor(0, 10);
-  lcd.print(frontUltra.avg());
+
   lcd.setCursor(0,1);
   lcd.print(newLeftSpeed);
   lcd.setCursor(10,1);
@@ -1104,11 +1114,7 @@ lcd.clear();
        break;
      }
 
-     else if (frontUltra.avg() < 25){
-       driveTrain.setPower(0, 0);
-       delay(3000);
-       return;
-     }
+
     // else if(frontUltra.avg() < 15 && !goToFlame){
     //    goToFlame = false; //not in flame
     //    turnLeft = false;
