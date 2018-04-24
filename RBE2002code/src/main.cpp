@@ -1028,7 +1028,7 @@ void turn(int turnLeft){
 
   driveTrain.setPower(0, 0);
   delay(1000);
-  if(goToFlame || islandTurnBool){
+  if(goToFlame || islandTurnBool || cliff){
     //driveStraight(400);
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -1063,7 +1063,9 @@ void lineBack(){
   delay(2000);
   driveTrain.setPower(0, 0);
   delay(500);
+  cliff = true;
   turnInitialize(RIGHT);
+  driveStraight(20);
 }
 
 
