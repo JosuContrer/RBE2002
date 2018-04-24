@@ -398,7 +398,8 @@ void driveFollow(){
   //   backUltraVal = backLeftUltra.avg();
   // }
   //If front ultrasonic triggered (wall in front)
-  //Serial.println(frontUltra.avg());
+  lcd.clear();
+  lcd.print(frontUltra.avg());
   if(frontUltra.avg() < 15){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
@@ -889,7 +890,7 @@ void islandTurn(int distance){
 
 bool isSensorCliff(){
 
-  return 0;//digitalRead(LINEFOLLOWERONE) && digitalRead(LINEFOLLOWERTWO);
+  return digitalRead(LINEFOLLOWERONE) && digitalRead(LINEFOLLOWERTWO);
 
 
 }
