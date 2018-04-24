@@ -4,19 +4,20 @@
 #include <Servo.h>
 #include "PID.h"
 #include "Fan.h"
-
+#include <LiquidCrystal.h>
 
 //////////////
 //CONSTANTS //
 //////////////
 #define STARTVAL 80  //where Servo normally starts
-#define CENTER_VAL 300 //Where the flame is centered according to the sensor
+#define CENTER_VAL 580 //Where the flame is centered according to the sensor
 
 
 //////////////////////
 // Global Variables //
 //////////////////////
 extern Servo fanServo;
+extern LiquidCrystal lcd;
 PID centerFan;
 Fan fan;
 
@@ -60,7 +61,7 @@ void FireSensor::initialize(){
 
   //centerFan.setpid(0.03,0.001,0); //Work good but slow
   //centerFan.setpid(0.03,0.006,0); //Better when working alone
-  centerFan.setpid(0.02,0.004,0.0001); //REVIEW: A lot better
+  centerFan.setpid(.2,0,0); //REVIEW: A lot better
 }
 
 
@@ -175,23 +176,68 @@ int FireSensor::getx(){
 * Moves servo so flame is centered with servo
 */
 bool FireSensor::centerHeight(){
-  if(isFire()){
-    int fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
-    int newError = STARTVAL - fanError;
-    if (newError>178){
-      newError=178;
+  useSensor();
+  //int fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
+  // int newError = STARTVAL - fanError;
+  // if (newError>178){
+  //   newError=178;
+  // }
+  // if(newError<2){
+  //   newError=0;
+  // }
+  // lcd.clear();
+  // lcd.setCursor(0, 0);
+  // lcd.print(fanError);
+  // lcd.setCursor(0, 1);
+  // lcd.print(getz());
+  // delay(3000);
+  int start = STARTVAL;
+  bool below;
+  while(abs(getz() - CENTER_VAL) > 2){
+    useSensor();
+
+    if(getz() > CENTER_VAL){
+        below=false;
+        fanServo.write(start++);
+      }
+      //fanServo.write(start++);
+
+    else if(getz() < CENTER_VAL){
+    //else{
+    // if(getz() == 1023){
+    //   fanServo.write(start++);
+    // }else{
+      below=true;
+      fanServo.write(start--);
+  //  }
     }
-    if(newError<2){
-      newError=0;
+    else if(getz()==1023&&!below){
+      fanServo.write(start--);
     }
-    fanServo.write(newError); //add error to initial starting position
-    //Serial.println(fanError);
-    if(fanError <= 2){
-      return true; //When it sees the candle
-    }else{
-      return false;
+    else{
+      fanServo.write(start++);
     }
+    // fanServo.write(newError); //add error to initial starting position
+    // //Serial.println(fanError);
+    //  fanError =  centerFan.calc(CENTER_VAL, getz()); //Use PID to center flame
+    //  newError = STARTVAL - fanError;
+    // if (newError>178){
+    //   newError=178;
+    // }
+    // if(newError<2){
+    //   newError=0;
+    // }
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(start);
+    lcd.setCursor(0, 1);
+    lcd.print(getz());
+    // lcd.setCursor(10, 1);
+    // lcd.print(newError);
+    delay(100);
   }
+    return true;
+  //}
 }
 
 

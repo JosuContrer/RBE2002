@@ -122,6 +122,7 @@ extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
 extern Fan fan;
+
 GP2Y0A02YK0F irSensor;
 
 Line lineOne(LINEFOLLOWERONE,10);
@@ -159,7 +160,7 @@ void setup() {
   //PIDs
   driveStraightPID.setpid(15, 0,.05); //PID to drive straight  //was 30
   //turnPID.setpid(100,.3,.01); //PID for turning //was 13
-  centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
+  centerFlameXPID.setpid(100, 0, 0); //PID for centering flame
   encoderPID.setpid(.1, .1, 0.01);
   gyroPID.setpid(4.5, 0, 0.01);
 
@@ -193,7 +194,7 @@ void loop() {
 
 
  // driveTrain.setPower(255, 255);
- // lcd.print(leftEncTicks);
+ // //lcd.print(leftEncTicks);
  // int val = frontUltra.avg();
  //  Serial.println(val);
 
@@ -233,20 +234,20 @@ void loop() {
     case WALLFOLLOW:
       driveFollow();
 
-      // lcd.clear();
-      // lcd.setCursor(0, 0);
-      // lcd.print("WALLFOLLOWING");
+      // //lcd.clear();
+      // //lcd.setCursor(0, 0);
+      // //lcd.print("WALLFOLLOWING");
 
       break;
 
     case STOP:
       driveTrain.setPower(0, 0);
-      lcd.setCursor(0,0);
-      lcd.print(digitalRead(LINEFOLLOWERONE));
-      lcd.setCursor(0,1);
-      lcd.print(digitalRead(LINEFOLLOWERTWO));
-      lcd.clear();
-      lcd.setCursor(10,0);
+      //lcd.setCursor(0,0);
+      //lcd.print(digitalRead(LINEFOLLOWERONE));
+      //lcd.setCursor(0,1);
+      //lcd.print(digitalRead(LINEFOLLOWERTWO));
+      //lcd.clear();
+      //lcd.setCursor(10,0);
 
       break;
 
@@ -275,12 +276,12 @@ void loop() {
 
     case FLAME: //REVIEW:
 
-      lcd.clear();
-      lcd.setCursor(0, 1);
+      //lcd.clear();
+      //lcd.setCursor(0, 1);
       //if(!fireSensor.isFire()){
       //   break;
       // }
-      lcd.print("Flame is in front");
+      //lcd.print("Flame is in front");
       driveTrain.setPower(0, 0);
       // bool hVal;
       // bool xVal;
@@ -288,9 +289,9 @@ void loop() {
       //if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
         /**********************************************/
         //hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Center Height");
+        //lcd.clear();
+        //lcd.setCursor(0, 0);
+        //lcd.print("Center Height");
         //delay(200);
         /**********************************************/
         //xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
@@ -303,15 +304,15 @@ void loop() {
       // }
       // if(hVal && xVal){
         //if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
-        lcd.clear();
-        lcd.setCursor(0, 0);
-          lcd.print("Blowing");
+        //lcd.clear();
+        //lcd.setCursor(0, 0);
+          //lcd.print("Blowing");
           fireSensor.blowOutCandle(); //extinguish the candle
           blowing = true;
-          lcd.clear();
-          lcd.setCursor(0, 0);
+          //lcd.clear();
+          //lcd.setCursor(0, 0);
           if(!fireSensor.isFire()){
-          lcd.print("Blew out candle");
+          //lcd.print("Blew out candle");
         //}else{
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
           state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
@@ -320,15 +321,18 @@ void loop() {
       }
       break;
    case TRAVELTOFLAME:
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("TRAVELTOFLAME");
+      //lcd.clear();
+      //lcd.setCursor(0, 0);
+      //lcd.print("TRAVELTOFLAME");
       firstTurn = false;
       distToCandle = sideUltra.avg();
-      lcd.setCursor(0, 1);
-      lcd.print(distToCandle);
-
-      //centerFlameX();
+      //lcd.setCursor(0, 1);
+      //lcd.print(distToCandle);
+      //lcd.clear();
+      //lcd.setCursor(0, 0);
+      //lcd.print("Center height");
+      fireSensor.centerHeight();
+      centerFlameX();
       driveTrain.setPower(0, 0);
       delay(2000);
 
@@ -366,9 +370,9 @@ void loop() {
 
 
     //delay(500);
-      lcd.clear();
-      lcd.setCursor(0,0);
-     lcd.print("DRIVESTRAIGHT");
+      //lcd.clear();
+      //lcd.setCursor(0,0);
+     //lcd.print("DRIVESTRAIGHT");
 
       //}
        break;
@@ -387,10 +391,10 @@ void loop() {
  * @param turnDir 1 for right, 0 for left
  */
 int turnInitialize(int turnDir){
-  lcd.clear();
+  //lcd.clear();
   baseLeftSpeed=0;
   baseRightSpeed=0;
-  calcXandY();
+  //calcXandY();
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   switch(turnDir){
     case LEFT:
@@ -433,13 +437,13 @@ void driveFollow(){
   //   backUltraVal = backLeftUltra.avg();
   // }
   //If front ultrasonic triggered (wall in front)
-  lcd.clear();
+  //lcd.clear();
 
   // if(frontUltra.avg() < 15){
   //   driveTrain.setPower(0, 0); //Stop robot
-  //   lcd.clear();          //COMBAK: Remove this, for testing
-  //   lcd.setCursor(5, 1);
-  //   lcd.print("FRONT ULTRA TRIGGERED");
+  //   //lcd.clear();          //COMBAK: Remove this, for testing
+  //   //lcd.setCursor(5, 1);
+  //   //lcd.print("FRONT ULTRA TRIGGERED");
   //   delay(2000);
   //   //delay(400);
   //   frontUltra.clear();
@@ -466,11 +470,11 @@ void driveFollow(){
     //state = FLAME;
     //centerFlameX();  //center flame in x direction
     //driveToFlame();
-    lcd.setCursor(5,1);
-    lcd.print("flame");
+    //lcd.setCursor(5,1);
+    //lcd.print("flame");
     //delay(300);
     state = TRAVELTOFLAME;
-    calcXandY();
+    //calcXandY();
     //return;
     //}
   }
@@ -485,7 +489,7 @@ void driveFollow(){
  * NOTE: Does not include set distance from wall
  */
 void followWall(){
-  //lcd.clear();
+  ////lcd.clear();
   //set base speeds
 
   baseRightSpeed =baseLeftSpeed_120;
@@ -509,20 +513,20 @@ void followWall(){
   // Serial.println(backUltraVal);
 
   if(frontUltraVal > 35){
-    lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(0, 1);
-    lcd.print("NO Wall");
+    //lcd.clear();          //COMBAK: Remove this, for testing
+    //lcd.setCursor(0, 1);
+    //lcd.print("NO Wall");
      turnLeft = true;
      //driveStraight(10);
-     calcXandY();
+     //calcXandY();
      islandTurn(10);
 
     //if(reachedDistance){
     //turnLeft = turnInitialize(LEFT);
       //state = STOP;
-      // lcd.clear();
-      // lcd.setCursor(0, 1);
-      // lcd.print("Stopped");
+      // //lcd.clear();
+      // //lcd.setCursor(0, 1);
+      // //lcd.print("Stopped");
   //  turnInitialize(LEFT);
     // }else{
     //   return;
@@ -539,13 +543,13 @@ void followWall(){
     // }
     // if(count1==count2){
     driveTrain.setPower(0, 0); //Stop robot
-    lcd.clear();          //COMBAK: Remove this, for testing
-    lcd.setCursor(5, 1);
-    lcd.print("FRONT ULTRA TRIGGERED");
+    //lcd.clear();          //COMBAK: Remove this, for testing
+    //lcd.setCursor(5, 1);
+    //lcd.print("FRONT ULTRA TRIGGERED");
     delay(2000);
     //delay(400);
     frontUltra.clear();
-    calcXandY(); //Calculate x and y
+    //calcXandY(); //Calculate x and y
 
 
     turnInitialize(RIGHT);
@@ -554,8 +558,8 @@ void followWall(){
 
   if(isSensorCliff()){
     lineBack();
-    lcd.setCursor(5,1);
-    lcd.print("line");
+    //lcd.setCursor(5,1);
+    //lcd.print("line");
     //delay(400);
     islandTurn(10);
   }
@@ -578,14 +582,14 @@ void followWall(){
 
 
   driveTrain.setPower(newLeftSpeed, newRightSpeed);
-  lcd.setCursor(0, 0);
-  lcd.print(frontLeftUltra.avg());
-  lcd.setCursor(0, 10);
+  //lcd.setCursor(0, 0);
+  //lcd.print(frontLeftUltra.avg());
+  //lcd.setCursor(0, 10);
 
-  lcd.setCursor(0,1);
-  lcd.print(newLeftSpeed);
-  lcd.setCursor(10,1);
-  lcd.print(newRightSpeed);
+  //lcd.setCursor(0,1);
+  //lcd.print(newLeftSpeed);
+  //lcd.setCursor(10,1);
+  //lcd.print(newRightSpeed);
 
 }
 
@@ -601,13 +605,12 @@ void followWall(){
  ****************************************************/
 void calcXandY(){
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + (temp *.0072*2)/ 8 * cos(gyro);   //REVIEW: Add back in gyro code
-  y = y + (temp *.0072*2)/ 8 * sin(gyro);
+  x = x + (temp *.0072*2)/ 3 * cos(gyro);   //REVIEW: Add back in gyro code
+  y = y + (temp *.0072*2)/ 3 * sin(gyro);
   leftEncTicks=0;
   rightEncTicks=0;
   //TODO: For final distance, must use ultrasonic to get distance from robot to candle
 }
-
 
 /**
  * Calculate height of flame
@@ -648,13 +651,13 @@ void calculateHeight(){
  * @param message Message to be printed
  */
 void printLCD(int valOne, int valTwo, char message[]){
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(valOne);
-  lcd.setCursor(10, 0);
-  lcd.print(valTwo);
-  lcd.setCursor(0,1);
-  lcd.print(message);
+  //lcd.clear();
+  //lcd.setCursor(0, 0);
+  //lcd.print(valOne);
+  //lcd.setCursor(10, 0);
+  //lcd.print(valTwo);
+  //lcd.setCursor(0,1);
+  //lcd.print(message);
 }
 
 
@@ -662,16 +665,16 @@ void printLCD(int valOne, int valTwo, char message[]){
  * Display x, y, and z values on LCD
  */
 void displayXYZ(){
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("X: ");
-  lcd.print(saveX);
-  lcd.print("  ");
-  lcd.print("Y: ");
-  lcd.print(saveY);
-  lcd.setCursor(0, 1);
-  lcd.print("Z: ");
-  lcd.print(saveZ);
+  //lcd.clear();
+  //lcd.setCursor(0, 0);
+  //lcd.print("X: ");
+  //lcd.print(saveX);
+  //lcd.print("  ");
+  //lcd.print("Y: ");
+  //lcd.print(saveY);
+  //lcd.setCursor(0, 1);
+  //lcd.print("Z: ");
+  //lcd.print(saveZ);
 }
 
 
@@ -731,7 +734,7 @@ void calibrateLineSensor() {
 void setupIMU()
 {
   if(!bno.begin()){
-    lcd.print("error");
+    //lcd.print("error");
   }
   bno.setExtCrystalUse(true);
 }
@@ -741,26 +744,61 @@ void setupIMU()
  * Center flame in x direction
  */
 bool centerFlameX(){
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("center flame x");
-  fireSensor.useSensor();
-  int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
-  int newSpeed = 90 + centerXError;
-  int encoderError = encoderPID.calc(rightEncTicks, leftEncTicks);
-  driveTrain.setPower(newSpeed+encoderError, newSpeed-encoderError); //dont want wheels to turn, so make sure both are going in same direction
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(newSpeed);
-  lcd.setCursor(0, 1);
-  lcd.print(fireSensor.getx());
-   if(abs(CENTERVAL_X-fireSensor.getx()) <=20){
-     driveTrain.setPower(0, 0);
-     return true;
-   }
-   else{
-    return false;
-   }
+  baseLeftSpeed = 100;
+  baseRightSpeed = 100;
+  //lcd.clear();
+  //lcd.setCursor(0, 0);
+  //lcd.print("center flame x");
+  // fireSensor.useSensor();
+  // int centerXError = centerFlameXPID.calc(CENTERVAL_X, fireSensor.getx()); //PID based on flame x value and centered x value
+  // int newSpeed = 90 + centerXError;
+  // int encoderError = encoderPID.calc(rightEncTicks, leftEncTicks);
+  // driveTrain.setPower(newSpeed+encoderError, newSpeed-encoderError); //dont want wheels to turn, so make sure both are going in same direction
+  // //lcd.clear();
+  // //lcd.setCursor(0, 0);
+  // //lcd.print(newSpeed);
+  // //lcd.setCursor(0, 1);
+  // //lcd.print(fireSensor.getx());
+  //  if(abs(CENTERVAL_X-fireSensor.getx()) <=20){
+  //    driveTrain.setPower(0, 0);
+  //    return true;
+  //  }
+  float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+  while(abs(fireSensor.getx() - CENTERVAL_X) > 30){
+    fireSensor.useSensor();
+    if(fireSensor.getx() < CENTERVAL_X){
+      newLeftSpeed = baseLeftSpeed + encoderError;
+      newRightSpeed = baseRightSpeed - encoderError;
+      // if (newLeftSpeed > 255){
+      //   newLeftSpeed = 255;
+      // }
+      // if (newRightSpeed > 255){
+      //   newRightSpeed=255;
+      // }
+      // driveTrain.setPower(0, newRightSpeed);
+    }
+    else{
+      newLeftSpeed = (baseLeftSpeed + encoderError) * -1;
+      newRightSpeed = (baseRightSpeed - encoderError) * -1;
+
+    }
+    if (newLeftSpeed > 255){
+      newLeftSpeed = 255;
+    }
+    if (newRightSpeed > 255){
+      newRightSpeed=255;
+    }
+    driveTrain.setPower(0, newRightSpeed);
+    encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+    //lcd.setCursor(0, 1);
+    //lcd.print(fireSensor.getx());
+    //lcd.setCursor(10, 1);
+    //lcd.print(abs(fireSensor.getx() - CENTERVAL_X));
+  }
+  return true;
+   // else{
+   //  return false;
+   // }
 }
 
 
@@ -794,15 +832,15 @@ bool driveStraight(float distToGo){
   // baseLeftSpeed=baseLeftSpeed_120;
   // baseRightSpeed=baseRightSpeed_120;
   //
-  // lcd.setCursor(0,0);
-  // lcd.print("in Drive straight");
+  // //lcd.setCursor(0,0);
+  // //lcd.print("in Drive straight");
   frontUltra.clear();
   baseLeftSpeed = 200;
   baseRightSpeed = 200;
   distTraveled = returnDistance();
   finalDistance = distTraveled + distToGo;
    //state=DRIVESTRAIGHT;
-lcd.clear();
+//lcd.clear();
    while(distTraveled < finalDistance){
 
      //islandTurn = true;
@@ -837,8 +875,8 @@ lcd.clear();
      float gyroPercentage = 0;
      float encoderPercentage = .2;
      float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-     lcd.setCursor(0,0);
-     lcd.print(finalDistance-distTraveled);
+     //lcd.setCursor(0,0);
+     //lcd.print(finalDistance-distTraveled);
 
      //Gyro PID
      imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -861,19 +899,19 @@ lcd.clear();
      // }
      driveTrain.setPower(newLeftSpeed, newRightSpeed);
      delay(10);
-     lcd.setCursor(0,1);
-     lcd.print(newLeftSpeed);
-     lcd.setCursor(10,1);
-     lcd.print(newRightSpeed);
+     //lcd.setCursor(0,1);
+     //lcd.print(newLeftSpeed);
+     //lcd.setCursor(10,1);
+     //lcd.print(newRightSpeed);
      distTraveled = returnDistance();
    }
   // if(goToFlame){
   //      turnInitialize(RIGHT);
   //    }
     if(islandTurnBool){
-       lcd.clear();
-       lcd.setCursor(0, 0);
-       lcd.print("In else if in DS");
+       //lcd.clear();
+       //lcd.setCursor(0, 0);
+       //lcd.print("In else if in DS");
        //delay(1000);
        return;
      }
@@ -900,8 +938,8 @@ lcd.clear();
   // float gyroPercentage = .1;
   // float encoderPercentage = .9;
   // float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-  // lcd.setCursor(0,0);
-  // lcd.print(leftEncTicks);
+  // //lcd.setCursor(0,0);
+  // //lcd.print(leftEncTicks);
   //
   // //Gyro PID
   // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -988,6 +1026,13 @@ double gyroLookUp(double gyroVal){
 }
 
 void turn(int turnLeft){
+  calcXandY();
+  //lcd.setCursor(0, 0);
+  //displayXYZ();
+  lcd.setCursor(0, 0);
+  lcd.print(x);
+  lcd.setCursor(10, 0);
+  lcd.print(y);
   leftEncTicks = 0;
   rightEncTicks = 0;
 
@@ -1000,8 +1045,8 @@ void turn(int turnLeft){
     currentAngle =  euler.x();
     // if(isSensorCliff()){
     //   state = TURNRIGHTLINE;
-    //   lcd.setCursor(5,1);
-    //   lcd.print("line");
+    //   //lcd.setCursor(5,1);
+    //   //lcd.print("line");
     //   //delay(400);
     //   cliff = true;
     // }
@@ -1022,31 +1067,31 @@ void turn(int turnLeft){
 
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
     frontUltra.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("TURNING");
-    lcd.setCursor(0, 1);
-    lcd.print(currentAngle);
-    lcd.setCursor(10, 1);
-    lcd.print(desiredGyro);
-    lcd.setCursor(10, 0);
-    lcd.print(abs(desiredGyro - currentAngle));
+    //lcd.setCursor(0, 0);
+    //lcd.print("TURNING");
+    //lcd.setCursor(0, 1);
+    //lcd.print(currentAngle);
+    //lcd.setCursor(10, 1);
+    //lcd.print(desiredGyro);
+    //lcd.setCursor(10, 0);
+    //lcd.print(abs(desiredGyro - currentAngle));
 
 
   }
 
   // driveTrain.setPower(0, 0); //COMBAK: Remove these lines
   // delay(5000);
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Finished turning");
+  //lcd.clear();
+  //lcd.setCursor(0, 0);
+  //lcd.print("Finished turning");
 
   driveTrain.setPower(0, 0);
   delay(1000);
   if(goToFlame || islandTurnBool || cliff){
     //driveStraight(400);
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("in if in turn");
+    //lcd.clear();
+    //lcd.setCursor(0, 0);
+    //lcd.print("in if in turn");
     return;
   }
   // else if(turnLeft){
@@ -1070,7 +1115,7 @@ void stopMoving(){
 }
 
 void lineBack(){
-  lcd.print("in cliff");
+  //lcd.print("in cliff");
   driveTrain.setPower(0, 0);
   delay(500);
   driveTrain.setPower(-200, -200);
@@ -1099,14 +1144,14 @@ void driveFlameSeen(int distToGo){
   // baseLeftSpeed=baseLeftSpeed_120;
   // baseRightSpeed=baseRightSpeed_120;
   //
-  // lcd.setCursor(0,0);
-  // lcd.print("in Drive straight");
+  // //lcd.setCursor(0,0);
+  // //lcd.print("in Drive straight");
   baseLeftSpeed = 200;
   baseRightSpeed = 200;
   distTraveled = returnDistance();
   finalDistance = distTraveled + distToGo;
    //state=DRIVESTRAIGHT;
-lcd.clear();
+//lcd.clear();
    while((distTraveled < finalDistance) && (irSensor.getDistanceCentimeter() > 20)){
 
      //islandTurn = true;
@@ -1137,8 +1182,8 @@ lcd.clear();
      float gyroPercentage = 0;
      float encoderPercentage = .2;
      float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-     lcd.setCursor(0,0);
-     lcd.print(finalDistance-distTraveled);
+     //lcd.setCursor(0,0);
+     //lcd.print(finalDistance-distTraveled);
 
      //Gyro PID
      imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -1161,19 +1206,19 @@ lcd.clear();
      // }
      driveTrain.setPower(newLeftSpeed, newRightSpeed);
      delay(10);
-     lcd.setCursor(0,1);
-     lcd.print(newLeftSpeed);
-     lcd.setCursor(10,1);
-     lcd.print(newRightSpeed);
+     //lcd.setCursor(0,1);
+     //lcd.print(newLeftSpeed);
+     //lcd.setCursor(10,1);
+     //lcd.print(newRightSpeed);
      distTraveled = returnDistance();
    }
   // if(goToFlame){
   //      turnInitialize(RIGHT);
   //    }
     if(islandTurnBool){
-       lcd.clear();
-       lcd.setCursor(0, 0);
-       lcd.print("In else if in DS");
+       //lcd.clear();
+       //lcd.setCursor(0, 0);
+       //lcd.print("In else if in DS");
        //delay(1000);
        return;
      }
@@ -1200,8 +1245,8 @@ lcd.clear();
   // float gyroPercentage = .1;
   // float encoderPercentage = .9;
   // float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-  // lcd.setCursor(0,0);
-  // lcd.print(leftEncTicks);
+  // //lcd.setCursor(0,0);
+  // //lcd.print(leftEncTicks);
   //
   // //Gyro PID
   // imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
