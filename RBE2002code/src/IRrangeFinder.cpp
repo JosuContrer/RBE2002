@@ -4,7 +4,7 @@
  *	IR Distance Sensor Library
  */
 
-#include <IRrangeFiner.h>
+#include <IRrangeFinder.h>
 
 // Constructor
 

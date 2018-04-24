@@ -57,4 +57,6 @@
 /////////
 #define FANPIN 10
 #define FANSERVOPIN 8
+
+#define IRPIN A1
 #endif

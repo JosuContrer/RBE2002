@@ -17,6 +17,7 @@
 #include "Fan.h"
 #include "MotorStates.h"
 #include "line.h"
+#include "IRrangeFinder.h"
 //RYAN
 
 //////////////
@@ -67,6 +68,7 @@ float finalDistance;
 MotorStates testMotor;
 int turns=0;
 int distToCandle= 0;
+
 
 ////////////////////////
 //Function prototypes //
@@ -120,6 +122,7 @@ extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
 extern Fan fan;
+GP2Y0A02YK0F irSensor;
 
 Line lineOne(LINEFOLLOWERONE,10);
 Line lineTwo(LINEFOLLOWERTWO,10);
@@ -160,6 +163,7 @@ void setup() {
   encoderPID.setpid(.1, .1, 0.01);
   gyroPID.setpid(4.5, 0, 0.01);
 
+  irSensor.begin(IRPIN);
   //Displays
   lcd.begin(16, 2);
   Serial.begin(115200);
@@ -278,8 +282,8 @@ void loop() {
       // }
       lcd.print("Flame is in front");
       driveTrain.setPower(0, 0);
-      bool hVal;
-      bool xVal;
+      // bool hVal;
+      // bool xVal;
 
       //if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
         /**********************************************/
@@ -524,16 +528,16 @@ void followWall(){
     //   return;
     // }
   }
-  if(frontUltra.avg() < 15){
-    int count1=0,count2=0;
-    unsigned int time=millis();
-    while(time+100>millis()){
-      if(frontUltra.avg()<15){
-        count1++;
-      }
-      count2++;
-    }
-    if(count1==count2){
+  if(irSensor.getDistanceCentimeter() < 30){
+    // int count1=0,count2=0;
+    // unsigned int time=millis();
+    // while(time+100>millis()){
+    //   if(irSensor.getDistanceCentimeter() < 20){
+    //     count1++;
+    //   }
+    //   count2++;
+    // }
+    // if(count1==count2){
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(5, 1);
@@ -545,7 +549,7 @@ void followWall(){
 
 
     turnInitialize(RIGHT);
-  }   //REVIEW: This should be moved to TURN because line followers uses it as well
+  // }   //REVIEW: This should be moved to TURN because line followers uses it as well
   }
 
   if(isSensorCliff()){
@@ -778,7 +782,7 @@ bool driveStraight(float distToGo){
   //NOTE: These values must add to 1
   leftEncTicks = 0;
   rightEncTicks = 0;
-  if (frontUltra.avg() < 25){
+  if (irSensor.getDistanceCentimeter() < 30){
     driveTrain.setPower(0, 0);
     delay(3000);
     return;
@@ -812,7 +816,7 @@ lcd.clear();
        break;
      }
 
-     else if (frontUltra.avg() < 25){
+     else if (irSensor.getDistanceCentimeter() < 30){
        driveTrain.setPower(0, 0);
        delay(3000);
        return;
@@ -1083,7 +1087,7 @@ void driveFlameSeen(int distToGo){
   //NOTE: These values must add to 1
   leftEncTicks = 0;
   rightEncTicks = 0;
-  if (frontUltra.avg() < 25){
+  if (irSensor.getDistanceCentimeter() < 30){
     driveTrain.setPower(0, 0);
     delay(3000);
     return;
@@ -1103,7 +1107,7 @@ void driveFlameSeen(int distToGo){
   finalDistance = distTraveled + distToGo;
    //state=DRIVESTRAIGHT;
 lcd.clear();
-   while((distTraveled < finalDistance) && (frontUltra.avg() > 15)){
+   while((distTraveled < finalDistance) && (irSensor.getDistanceCentimeter() > 20)){
 
      //islandTurn = true;
      if(fireSensor.isFire()){ //&& firstTurn){
