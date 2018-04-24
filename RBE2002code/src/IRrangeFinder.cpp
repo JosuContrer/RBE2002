@@ -5,7 +5,7 @@
  */
 
 #include <IRrangeFinder.h>
-
+#include "globalPins.h"
 // Constructor
 
 GP2Y0A02YK0F::GP2Y0A02YK0F() {
@@ -15,7 +15,7 @@ GP2Y0A02YK0F::GP2Y0A02YK0F() {
 // Default Begin method: sensorPin = A0.
 
 void GP2Y0A02YK0F::begin() {
-	begin (A0);
+	begin (IRPIN);
 }
 
 // Begin method - assign sensorPin as the analog sensor input
@@ -57,5 +57,45 @@ boolean GP2Y0A02YK0F::isFarther(int threshold) {
 		return true;
 	} else {
 		return false;
+	}
+}
+
+int GP2Y0A02YK0F::avg(){
+	int avg=0, sum=0,divider=0;
+
+	for(int i=1; i < 9; i++){
+		savedReads[9-i]=savedReads[9-i-1]; //shift array values to make room for new
+	}
+
+	savedReads[0]=getDistanceCentimeter(); //add new distance to array
+
+	//Count number of values
+	for(int i=0; i<5; i++){
+		if(savedReads[i]<30 && savedReads[i]>0){
+			sum+=savedReads[i];
+			divider++;
+		}
+	}
+
+	//Take average of values
+	if(divider!=0){
+		avg=sum/divider;
+	}
+
+	else{
+		avg = 40;//random number that wont trigger anything
+	}
+
+	//Wrap protection
+	if(!(avg<40&&avg>0)){
+		avg=40;
+	}
+
+	return avg;
+}
+
+void GP2Y0A02YK0F::clear(){
+	for(int i = 0; i < 10; i++){
+		savedReads[i] = 39;
 	}
 }

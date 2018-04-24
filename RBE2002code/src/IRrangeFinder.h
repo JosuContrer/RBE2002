@@ -37,11 +37,14 @@ class GP2Y0A02YK0F
 		int getDistanceRaw();
 		int getDistanceVolt();
 		int getDistanceCentimeter();
+		int avg();
+		void clear();
 
 		boolean isCloser(int threshold);
 		boolean isFarther(int threshold);
 
 	private:
 		int _sensorPin;
+		int savedReads[10];
 };
 #endif

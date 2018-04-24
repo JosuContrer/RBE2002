@@ -48,8 +48,8 @@
 #define addrCalibratedMinimumOn 0
 #define addrCalibratedMaximumOn 100
 
-#define LINEFOLLOWERONE 4
-#define LINEFOLLOWERTWO 5
+#define LINEFOLLOWERONE A5
+#define LINEFOLLOWERTWO A4
 
 
 /////////
@@ -58,5 +58,5 @@
 #define FANPIN 10
 #define FANSERVOPIN 8
 
-#define IRPIN A1
+#define IRPIN A3
 #endif
