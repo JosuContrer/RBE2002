@@ -819,13 +819,14 @@ bool centerFlameX(){
   // //lcd.setCursor(0, 1);
   // //lcd.print(fireSensor.getx());
   //  if(abs(CENTERVAL_X-fireSensor.getx()) <=20){
-  //    driveTrain.setPower(0, 0);
+     driveTrain.setPower(0, 0);
+     delay(1000);
   //    return true;
   //  }
   float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
   while(abs(fireSensor.getx() - CENTERVAL_X) > 30){
     fireSensor.useSensor();
-    if(fireSensor.getx() < CENTERVAL_X){
+    // if(fireSensor.getx() < CENTERVAL_X){
       newLeftSpeed = baseLeftSpeed + encoderError;
       newRightSpeed = baseRightSpeed - encoderError;
       // if (newLeftSpeed > 255){
@@ -835,19 +836,19 @@ bool centerFlameX(){
       //   newRightSpeed=255;
       // }
       // driveTrain.setPower(0, newRightSpeed);
-    }
-    else{
-      newLeftSpeed = (baseLeftSpeed + encoderError) * -1;
-      newRightSpeed = (baseRightSpeed - encoderError) * -1;
-
-    }
+  //  }
+    // else{
+    //   newLeftSpeed = (baseLeftSpeed + encoderError) * -1;
+    //   newRightSpeed = (baseRightSpeed - encoderError) * -1;
+    //
+    // }
     if (newLeftSpeed > 255){
       newLeftSpeed = 255;
     }
     if (newRightSpeed > 255){
       newRightSpeed=255;
     }
-    driveTrain.setPower(0, newRightSpeed);
+    driveTrain.setPower(100, 145);
     encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
     lcd.setCursor(0, 1);
     lcd.print(fireSensor.getx());
