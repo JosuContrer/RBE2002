@@ -729,6 +729,7 @@ bool driveStraight(float distToGo){
   //
   // lcd.setCursor(0,0);
   // lcd.print("in Drive straight");
+  frontUltra.clear();
   baseLeftSpeed = 200;
   baseRightSpeed = 200;
   distTraveled = returnDistance();
@@ -943,7 +944,7 @@ void turn(int turnLeft){
     }
 
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
-
+    frontUltra.clear();
     lcd.setCursor(0, 0);
     lcd.print("TURNING");
     lcd.setCursor(0, 1);
