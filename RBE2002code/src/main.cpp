@@ -121,7 +121,7 @@ extern Fan fan;
 void setup() {
   //fan.initialize();
 
-  state = WALLFOLLOW; //Robot will start being stopped
+  state = STOP; //Robot will start being stopped
   startStop = START; //Robot will move once button is pushed
 
   returnHome = false; //Not currently returning returning home
@@ -148,7 +148,7 @@ void setup() {
   driveStraightPID.setpid(15, 0,.05); //PID to drive straight  //was 30
   //turnPID.setpid(100,.3,.01); //PID for turning //was 13
   centerFlameXPID.setpid(.8, .1, .01); //PID for centering flame
-  encoderPID.setpid(.1, 0, 0.01);
+  encoderPID.setpid(.1, .1, 0.01);
   gyroPID.setpid(4.5, 0, 0.01);
 
   //Displays
@@ -228,6 +228,13 @@ void loop() {
 
     case STOP:
       driveTrain.setPower(0, 0);
+      lcd.setCursor(0,0);
+      lcd.print(digitalRead(LINEFOLLOWERONE));
+      lcd.setCursor(0,1);
+      lcd.print(digitalRead(LINEFOLLOWERTWO));
+      lcd.clear();
+      lcd.setCursor(10,0);
+      lcd.print(frontUltra.avg());
       break;
 
     case TURN: //REVIEW:
@@ -352,7 +359,7 @@ int turnInitialize(int turnDir){
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   switch(turnDir){
     case LEFT:
-      desiredGyro= ((int) euler.x() + 270) % 360;
+      desiredGyro= ((int) euler.x() +270) % 360;
 
       turnLeft = true;
       //state=TURN;
@@ -382,13 +389,7 @@ int turnInitialize(int turnDir){
  * Driving control
  */
 void driveFollow(){
-  if(isSensorCliff()){
-    state = TURNRIGHTLINE;
-    lcd.setCursor(5,1);
-    lcd.print("line");
-    //delay(400);
-    cliff = true;
-  }
+
   // int count=millis()%2;
   // if(count == 1){
   //   frontUltraVal = frontLeftUltra.avg();
@@ -403,6 +404,7 @@ void driveFollow(){
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(5, 1);
     lcd.print("FRONT ULTRA TRIGGERED");
+    delay(2000);
     //delay(400);
     frontUltra.clear();
     calcXandY(); //Calculate x and y
@@ -454,10 +456,9 @@ void followWall(){
   baseLeftSpeed = baseRightSpeed_120;
 
   //ping ultrasonics in succession
-  int count=millis()%2;
-  if(count == 1){
-    frontUltraVal = frontLeftUltra.avg();
-  }
+
+  frontUltraVal = frontLeftUltra.avg();
+
   // else if(count==0){
   //   backUltraVal = backLeftUltra.avg();
   // }
@@ -492,11 +493,11 @@ void followWall(){
     // }
   }
   if(isSensorCliff()){
-    state = TURNRIGHTLINE;
+    lineBack();
     lcd.setCursor(5,1);
     lcd.print("line");
     //delay(400);
-    cliff = true;
+    islandTurn(10);
   }
 
   //PID control
@@ -505,8 +506,8 @@ void followWall(){
   //pValLeft = driveStraightPID.calc(15, backUltraVal);
   //Serial.println(frontUltraVal);
   //S
-  newLeftSpeed = 120;
-  newRightSpeed = 120 - pValRight;
+  newLeftSpeed = 110;
+  newRightSpeed = 110 - pValRight;
 
   if (newLeftSpeed>255){
    newLeftSpeed=255;
@@ -742,20 +743,22 @@ lcd.clear();
        state = FLAME;
      }
      else if(isSensorCliff()){
-       driveTrain.setPower(0,0);
-       state = TURNRIGHTLINE;
+       lineBack();
+       break;
      }
-     // else if(frontUltra.avg() < 15 && !goToFlame){
-     //   goToFlame = false; //not in flame
-     //   turnLeft = false;
-     //   cliff = false;
-     //   turnInitialize(RIGHT);
-     // }
-     else if(frontLeftUltra.avg() < 25 && !goToFlame){
+
+
+    else if(frontUltra.avg() < 15 && !goToFlame){
+       goToFlame = false; //not in flame
+       turnLeft = false;
+       cliff = false;
+       turnInitialize(RIGHT);
+     }
+     else if(frontLeftUltra.avg() < 20 && !goToFlame&&cliff){
        state = WALLFOLLOW;
        //driveFollow();
-       //break;
-       return;
+       break;
+
      }
      //Encoder PID
      float gyroPercentage = 0;
@@ -784,15 +787,14 @@ lcd.clear();
      //   newRightSpeed= -255;
      // }
      driveTrain.setPower(newLeftSpeed, newRightSpeed);
-     delay(100);
-     lcd.clear();
+     delay(10);
      lcd.setCursor(0,1);
      lcd.print(newLeftSpeed);
      lcd.setCursor(10,1);
      lcd.print(newRightSpeed);
      distTraveled = returnDistance();
    }
-     if(goToFlame){
+  if(goToFlame){
        turnInitialize(RIGHT);
      }
      else if(islandTurnBool){
@@ -849,26 +851,29 @@ double returnDistance(){
 void islandTurn(int distance){
 
   //turnLeft = true;
-  islandTurnBool = true;
+  //islandTurnBool = true;
   driveStraight(distance);
   stopMoving();
-  delay(1000);
+  delay(500);
   turnInitialize(LEFT);
   stopMoving();
-  delay(1000);
+  delay(500);
+  driveStraight(25);
+  stopMoving();
+  delay(500);
+  turnInitialize(LEFT);
+  stopMoving();
+  delay(500);
   //turn(LEFT);
   driveStraight(distance);
   stopMoving();
-  delay(1000);
-  turnInitialize(LEFT);
-  stopMoving();
-  delay(1000);
-  //turn(LEFT);
-  driveStraight(20);
-  stopMoving();
-  delay(1000);
+  delay(500);
   state = WALLFOLLOW;
-  driveFollow();
+  turnLeft=false;
+
+
+
+
   //turnInitialize(LEFT);
   //turn(LEFT);
   //turnLeft = false;
@@ -883,7 +888,7 @@ void islandTurn(int distance){
 
 bool isSensorCliff(){
 
-  return digitalRead(LINEFOLLOWERONE) || digitalRead(LINEFOLLOWERTWO);
+  return 0;//digitalRead(LINEFOLLOWERONE) && digitalRead(LINEFOLLOWERTWO);
 
 
 }
@@ -909,31 +914,32 @@ void turn(int turnLeft){
   rightEncTicks = 0;
 
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  int currentAngle = (int) euler.x() % 360;
+  float currentAngle =  euler.x();
   //desiredGyro *= (0.5 * cliff);
 
-  while(currentAngle != desiredGyro){
-
-    if(isSensorCliff()){
-      state = TURNRIGHTLINE;
-      lcd.setCursor(5,1);
-      lcd.print("line");
-      //delay(400);
-      cliff = true;
-    }
-    frontUltraVal = frontLeftUltra.avg();
+  while(abs(desiredGyro - currentAngle)>=3){
+    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+    currentAngle =  euler.x();
+    // if(isSensorCliff()){
+    //   state = TURNRIGHTLINE;
+    //   lcd.setCursor(5,1);
+    //   lcd.print("line");
+    //   //delay(400);
+    //   cliff = true;
+    // }
+    //frontUltraVal = frontLeftUltra.avg();
     //proportionalVal = turnPID.calc(currentAngle, desiredGyro);
     proportionalVal = 0;
     // newLeftSpeed = 0 - proportionalVal;
     // newRightSpeed = 0 + proportionalVal;
     //
   if(!turnLeft){
-      newLeftSpeed = 120 + (-1 * proportionalVal);
-      newRightSpeed = -120 + proportionalVal;
+      newLeftSpeed = 150 + (-1 * proportionalVal);
+      newRightSpeed = -150 + proportionalVal;
     }
     else{
-      newLeftSpeed = -120 + proportionalVal;
-      newRightSpeed = 120 + (-1* proportionalVal);
+      newLeftSpeed = -150 + proportionalVal;
+      newRightSpeed = 150 + (-1* proportionalVal);
     }
 
     driveTrain.setPower(newLeftSpeed, newRightSpeed);
@@ -947,8 +953,7 @@ void turn(int turnLeft){
     lcd.setCursor(10, 0);
     lcd.print(abs(desiredGyro - currentAngle));
 
-    euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    currentAngle = (int) euler.x() % 360;
+
   }
 
   // driveTrain.setPower(0, 0); //COMBAK: Remove these lines
@@ -958,7 +963,7 @@ void turn(int turnLeft){
   lcd.print("Finished turning");
 
   driveTrain.setPower(0, 0);
-  delay(3000);
+  delay(1000);
   if(goToFlame || islandTurnBool){
     //driveStraight(400);
     lcd.clear();
@@ -969,10 +974,7 @@ void turn(int turnLeft){
   // else if(turnLeft){
   //   islandTurn(20);
   // }
-  else if(cliff){
-    cliff = false;
-    driveStraight(400);
-  }
+
   else{
     state=WALLFOLLOW;
     wallFound=false;
@@ -990,12 +992,12 @@ void stopMoving(){
 }
 
 void lineBack(){
+  lcd.print("in cliff");
   driveTrain.setPower(0, 0);
   delay(500);
-  driveTrain.setPower(-100, -100);
-  delay(1000);
+  driveTrain.setPower(-200, -200);
+  delay(2000);
   driveTrain.setPower(0, 0);
   delay(500);
-  cliff = true;
   turnInitialize(RIGHT);
 }
