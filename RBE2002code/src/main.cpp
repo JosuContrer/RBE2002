@@ -16,6 +16,7 @@
 #include <Bounce2.h>
 #include "Fan.h"
 #include "MotorStates.h"
+#include "line.h"
 //RYAN
 
 //////////////
@@ -114,6 +115,9 @@ extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
 extern Fan fan;
+
+Line lineOne(LINEFOLLOWERONE,10);
+Line lineTwo(LINEFOLLOWERTWO,10);
 
 //////////////////////
 //Arduino Functions //
@@ -228,13 +232,16 @@ void loop() {
 
     case STOP:
       driveTrain.setPower(0, 0);
-      lcd.setCursor(0,0);
-      lcd.print(digitalRead(LINEFOLLOWERONE));
-      lcd.setCursor(0,1);
-      lcd.print(digitalRead(LINEFOLLOWERTWO));
       lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print(lineOne.limit());
+      lcd.setCursor(0,1);
+      lcd.print(lineTwo.limit());
       lcd.setCursor(10,0);
-      lcd.print(frontUltra.avg());
+      lcd.print(digitalRead(LINEFOLLOWERONE));
+      lcd.setCursor(10,1);
+      lcd.print(digitalRead(LINEFOLLOWERTWO));
+
       break;
 
     case TURN: //REVIEW:
@@ -890,7 +897,7 @@ void islandTurn(int distance){
 
 bool isSensorCliff(){
 
-  return digitalRead(LINEFOLLOWERONE) && digitalRead(LINEFOLLOWERTWO);
+  return lineOne.limit() && lineTwo.limit();
 
 
 }
