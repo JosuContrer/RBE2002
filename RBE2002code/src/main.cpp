@@ -174,7 +174,7 @@ void setup() {
 
 void loop() {
   // testMotor.motorDrive(STRAIGHT);
-  Serial.println(frontUltra.avgTwo());
+//  Serial.println(frontUltra.avgTwo());
   // Serial.println(leftEncTicks);
   // Serial.print("R: ");
   // Serial.println(rightEncTicks);
@@ -194,184 +194,6 @@ void loop() {
  //  Serial.println(val);
 
 
-<<<<<<< HEAD
-//    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
-//    gyro = euler.x(); //x value of IMU
-//    frontUltraVal = frontLeftUltra.avg();
-//   //Serial.println(gyro);
-//   fireSensor.useSensor(); //save flame sensor values to array
-//
-//   //Emergency start/stop button
-//    debouncer.update();
-//   if(debouncer.risingEdge()){
-//     switch(startStop){
-//       case STOPROBOT:
-//         state = STOP; //stop robot
-//         startStop = START; //set so next time button is pressed, robot starts
-//         break;
-//
-//       case START:
-//         state = WALLFOLLOW; //start robot
-//         startStop = STOPROBOT; //set so next time button is pressed, robot stops
-//         break;
-//     }
-//   }
-//
-//   //REVIEW:
-//   if(returnHome){
-//     if(x < 3 && y < 3){  // as the robot gets closer to the original starting position,
-//                          // x and y should get closer to 0, at this point, want to stop robot
-//       state = STOP;
-//       displayXYZ(); //print to screen coordinates of candle
-//     }
-//   }
-//   //Main flow control
-//   switch(state){
-//     case WALLFOLLOW:
-//       driveFollow();
-//
-//       // lcd.clear();
-//       // lcd.setCursor(0, 0);
-//       // lcd.print("WALLFOLLOWING");
-//
-//       break;
-//
-//     case STOP:
-//       driveTrain.setPower(0, 0);
-//       lcd.setCursor(0,0);
-//       lcd.print(digitalRead(LINEFOLLOWERONE));
-//       lcd.setCursor(0,1);
-//       lcd.print(digitalRead(LINEFOLLOWERTWO));
-//       lcd.clear();
-//       lcd.setCursor(10,0);
-//       lcd.print(frontUltra.avg());
-//       break;
-//
-//     case TURN: //REVIEW:
-//       /******************************************************************************
-//       * IDEA                                                                       *
-//       * Turning should have its own PID, and it should not be based on ultrasonics *
-//       ******************************************************************************/
-//       // turn(turnLeft);
-//       // driveTrain.setPower(0, 0);
-//       // delay(3000);
-//       // if(goToFlame){
-//       //   driveStraight(400);
-//       // }
-//       // // else if(turnLeft){
-//       // //   islandTurn(20);
-//       // // }
-//       // else if(cliff){
-//       //   driveStraight(400);
-//       // }
-//       // else{
-//       //   state=WALLFOLLOW;
-//       //   wallFound=false;
-//       // }
-//       break;
-//
-//     case FLAME: //REVIEW:
-//
-//       lcd.clear();
-//       lcd.setCursor(0, 1);
-//       //if(!fireSensor.isFire()){
-//       //   break;
-//       // }
-//       lcd.print("Flame is in front");
-//       driveTrain.setPower(0, 0);
-//       bool hVal;
-//       bool xVal;
-//
-//       //if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
-//         /**********************************************/
-//         //hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
-//         lcd.clear();
-//         lcd.setCursor(0, 0);
-//         lcd.print("Center Height");
-//         //delay(200);
-//         /**********************************************/
-//         //xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
-//         /**********************************************/
-//         //driveTrain.setPower(0, 0);
-//         //calculateCandleOffset();
-//         //calculateHeight(); //determine height of candle
-//         //saveValues(); //save x, y, and z values (will change when robot returns home)
-//         /**********************************************/
-//       // }
-//       // if(hVal && xVal){
-//         //if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
-//         lcd.clear();
-//         lcd.setCursor(0, 0);
-//           lcd.print("Blowing");
-//           fireSensor.blowOutCandle(); //extinguish the candle
-//           blowing = true;
-//           lcd.clear();
-//           lcd.setCursor(0, 0);
-//           if(!fireSensor.isFire()){
-//           lcd.print("Blew out candle");
-//         //}else{
-//           returnHome = true; //use to have robot stop when returns to (0.0) posiion
-//           state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
-//         //}
-//         //}
-//       }
-//       break;
-//    case TRAVELTOFLAME:
-//       lcd.clear();
-//       lcd.setCursor(0, 0);
-//       lcd.print("TRAVELTOFLAME");
-//       firstTurn = false;
-//       distToCandle = sideUltra.avg();
-//       lcd.setCursor(0, 1);
-//       lcd.print(distToCandle);
-//
-//       //centerFlameX();
-//       driveTrain.setPower(0, 0);
-//       delay(2000);
-//
-//     //   // if(fireSensor.isFire()){
-//     //   //   driveTrain.setPower(0,0);
-//     //   //   state = FLAME;
-//     //   // }
-//        goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
-//        turnInitialize(RIGHT);
-//        //driveFlameSeen();
-//        //firstTurn = true;
-//        driveFlameSeen(10);
-//        //firstTurn = false;
-//        goToFlame = true;
-//        turnInitialize(LEFT);
-//
-//        if(fireSensor.isFire()){
-//          state = FLAME;
-//        }
-//        driveTrain.setPower(0, 0);
-//        delay(3000);
-//        break;
-//
-//      case TURNRIGHTLINE:
-//        //TODO:
-//         // driveTrain.setPower(-100, -100);
-//         // delay(1000);
-//         // driveTrain.setPower(0, 0);
-//         // cliff = true;
-//         // turnInitialize(RIGHT);
-//         lineBack();
-//         //driveStraight(100);
-//         break;
-//     case DRIVESTRAIGHT:
-//
-//
-//     //delay(500);
-//       lcd.clear();
-//       lcd.setCursor(0,0);
-//      lcd.print("DRIVESTRAIGHT");
-//
-//       //}
-//        break;
-//
-// }
-||||||| merged common ancestors
    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
    gyro = euler.x(); //x value of IMU
    frontUltraVal = frontLeftUltra.avg();
@@ -459,23 +281,23 @@ void loop() {
       bool hVal;
       bool xVal;
 
-      if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
+      //if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
         /**********************************************/
-        hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
+        //hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Center Height");
         //delay(200);
         /**********************************************/
-        xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
+        //xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
         /**********************************************/
         //driveTrain.setPower(0, 0);
-        calculateCandleOffset();
-        calculateHeight(); //determine height of candle
-        saveValues(); //save x, y, and z values (will change when robot returns home)
+        //calculateCandleOffset();
+        //calculateHeight(); //determine height of candle
+        //saveValues(); //save x, y, and z values (will change when robot returns home)
         /**********************************************/
-      }
-      if(hVal && xVal){
+      // }
+      // if(hVal && xVal){
         //if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
         lcd.clear();
         lcd.setCursor(0, 0);
@@ -489,177 +311,41 @@ void loop() {
         //}else{
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
           state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
-        }
+        //}
         //}
       }
       break;
    case TRAVELTOFLAME:
-      driveStraight(10);
-    //   // if(fireSensor.isFire()){
-    //   //   driveTrain.setPower(0,0);
-    //   //   state = FLAME;
-    //   // }
-       goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
-       turnInitialize(RIGHT);
-       driveStraight(100);
-       break;
-
-     case TURNRIGHTLINE:
-       //TODO:
-        // driveTrain.setPower(-100, -100);
-        // delay(1000);
-        // driveTrain.setPower(0, 0);
-        // cliff = true;
-        // turnInitialize(RIGHT);
-        lineBack();
-        //driveStraight(100);
-        break;
-    case DRIVESTRAIGHT:
-
-
-    //delay(500);
       lcd.clear();
-      lcd.setCursor(0,0);
-     lcd.print("DRIVESTRAIGHT");
-
-      //}
-       break;
-
-}
-=======
-   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
-   gyro = euler.x(); //x value of IMU
-   frontUltraVal = frontLeftUltra.avg();
-  //Serial.println(gyro);
-  fireSensor.useSensor(); //save flame sensor values to array
-
-  //Emergency start/stop button
-   debouncer.update();
-  if(debouncer.risingEdge()){
-    switch(startStop){
-      case STOPROBOT:
-        state = STOP; //stop robot
-        startStop = START; //set so next time button is pressed, robot starts
-        break;
-
-      case START:
-        state = WALLFOLLOW; //start robot
-        startStop = STOPROBOT; //set so next time button is pressed, robot stops
-        break;
-    }
-  }
-
-  //REVIEW:
-  if(returnHome){
-    if(x < 3 && y < 3){  // as the robot gets closer to the original starting position,
-                         // x and y should get closer to 0, at this point, want to stop robot
-      state = STOP;
-      displayXYZ(); //print to screen coordinates of candle
-    }
-  }
-  //Main flow control
-  switch(state){
-    case WALLFOLLOW:
-      driveFollow();
-
-      // lcd.clear();
-      // lcd.setCursor(0, 0);
-      // lcd.print("WALLFOLLOWING");
-
-      break;
-
-    case STOP:
-      driveTrain.setPower(0, 0);
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print(lineOne.limit());
-      lcd.setCursor(0,1);
-      lcd.print(lineTwo.limit());
-      lcd.setCursor(10,0);
-      lcd.print(digitalRead(LINEFOLLOWERONE));
-      lcd.setCursor(10,1);
-      lcd.print(digitalRead(LINEFOLLOWERTWO));
-
-      break;
-
-    case TURN: //REVIEW:
-      /******************************************************************************
-      * IDEA                                                                       *
-      * Turning should have its own PID, and it should not be based on ultrasonics *
-      ******************************************************************************/
-      // turn(turnLeft);
-      // driveTrain.setPower(0, 0);
-      // delay(3000);
-      // if(goToFlame){
-      //   driveStraight(400);
-      // }
-      // // else if(turnLeft){
-      // //   islandTurn(20);
-      // // }
-      // else if(cliff){
-      //   driveStraight(400);
-      // }
-      // else{
-      //   state=WALLFOLLOW;
-      //   wallFound=false;
-      // }
-      break;
-
-    case FLAME: //REVIEW:
-
-      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("TRAVELTOFLAME");
+      firstTurn = false;
+      distToCandle = sideUltra.avg();
       lcd.setCursor(0, 1);
-      //if(!fireSensor.isFire()){
-      //   break;
-      // }
-      lcd.print("Flame is in front");
-      driveTrain.setPower(0, 0);
-      bool hVal;
-      bool xVal;
+      lcd.print(distToCandle);
 
-      if(!blowing){//REVIEW: It is a global variable in main (at top). NOTE: check if this class works
-        /**********************************************/
-        hVal = fireSensor.centerHeight();  //move flame sensor to be at center of flame in y/z direction
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Center Height");
-        //delay(200);
-        /**********************************************/
-        xVal = centerFlameX(); //move flame sensor to be at center of flame in x direction
-        /**********************************************/
-        //driveTrain.setPower(0, 0);
-        calculateCandleOffset();
-        calculateHeight(); //determine height of candle
-        saveValues(); //save x, y, and z values (will change when robot returns home)
-        /**********************************************/
-      }
-      if(hVal && xVal){
-        //if(fireSensor.isFire()){//REVIEW: We can also make it do this for t amount of seconds and later check if its out
-        lcd.clear();
-        lcd.setCursor(0, 0);
-          lcd.print("Blowing");
-          fireSensor.blowOutCandle(); //extinguish the candle
-          blowing = true;
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          if(!fireSensor.isFire()){
-          lcd.print("Blew out candle");
-        //}else{
-          returnHome = true; //use to have robot stop when returns to (0.0) posiion
-          state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
-        }
-        //}
-      }
-      break;
-   case TRAVELTOFLAME:
-      driveStraight(10);
+      //centerFlameX();
+      driveTrain.setPower(0, 0);
+      delay(2000);
+
     //   // if(fireSensor.isFire()){
     //   //   driveTrain.setPower(0,0);
     //   //   state = FLAME;
     //   // }
        goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
        turnInitialize(RIGHT);
-       driveStraight(100);
+       //driveFlameSeen();
+       //firstTurn = true;
+       driveFlameSeen(1000);
+       //firstTurn = false;
+       goToFlame = true;
+       turnInitialize(LEFT);
+
+       if(fireSensor.isFire()){
+         state = FLAME;
+       }
+       driveTrain.setPower(0, 0);
+       delay(3000);
        break;
 
      case TURNRIGHTLINE:
@@ -684,7 +370,6 @@ void loop() {
        break;
 
 }
->>>>>>> c3598dd65edfa8c5dd11cdf9d38219030d5816a9
 }
 
 
@@ -744,17 +429,9 @@ void driveFollow(){
   //   backUltraVal = backLeftUltra.avg();
   // }
   //If front ultrasonic triggered (wall in front)
-<<<<<<< HEAD
-  //Serial.println(frontUltra.avg());
-  if(frontUltra.readDistance() < 15){
-||||||| merged common ancestors
-  //Serial.println(frontUltra.avg());
-  if(frontUltra.avg() < 15){
-=======
   lcd.clear();
   lcd.print(frontUltra.avg());
   if(frontUltra.avg() < 15){
->>>>>>> c3598dd65edfa8c5dd11cdf9d38219030d5816a9
     driveTrain.setPower(0, 0); //Stop robot
     lcd.clear();          //COMBAK: Remove this, for testing
     lcd.setCursor(5, 1);
@@ -1233,7 +910,7 @@ double returnDistance(){
 void islandTurn(int distance){
 
   //turnLeft = true;
-  //islandTurnBool = true;
+  islandTurnBool = true;
   driveStraight(distance);
   stopMoving();
   delay(500);
@@ -1256,6 +933,7 @@ void islandTurn(int distance){
   delay(500);
   state = WALLFOLLOW;
   turnLeft=false;
+  islandTurnBool = false;
 
 
 

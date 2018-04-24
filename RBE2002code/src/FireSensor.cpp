@@ -221,11 +221,11 @@ void FireSensor::oscillate(int count){
   for(int m = 0; m < count; m++){
     for(int i = 60; i < 120; i++){
       fanServo.write(i);
-      delay(10);
+      delay(100);
     }
     for(i = 120; i > 60; i--){
       fanServo.write(i);
-      delay(10);
+      delay(100);
     }
   }
 }
