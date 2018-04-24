@@ -68,8 +68,8 @@ int Ultrasonic::readDistance(){
    savedReads[0]=readDistance(); //add new distance to array
 
    //Count number of values
-   for(int i=0; i<5; i++){
-     if(savedReads[i]<30 && savedReads[i]>0){
+   for(int i=0; i<9; i++){
+     if(savedReads[i]<40 && savedReads[i]>0){
        sum+=savedReads[i];
        divider++;
      }
@@ -81,7 +81,7 @@ int Ultrasonic::readDistance(){
    }
 
    else{
-     avg = readDistance();//random number that wont trigger anything
+     avg = 40;//random number that wont trigger anything
    }
 
    //Wrap protection
