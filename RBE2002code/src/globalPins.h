@@ -59,4 +59,9 @@
 #define FANSERVOPIN 8
 
 #define IRPIN A3
+
+#define REDLED 14
+#define BLUELED 15
+
+
 #endif

@@ -104,6 +104,7 @@ void stopMoving();
 void lineBack();
 void driveFlameSeen(int);
 void calcZ();
+void writeLED(int);
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -145,6 +146,11 @@ void setup() {
   pinMode(18, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(18), RightEncoderTicks, CHANGE);
   pinMode(11, INPUT_PULLUP);
+
+  pinMode(BLUELED, OUTPUT);
+  pinMode(REDLED, OUTPUT);
+  digitalWrite(BLUELED, LOW);
+  digitalWrite(REDLED, LOW);
 
   //Debouncer
   debouncer.attach(11);
@@ -278,10 +284,15 @@ void loop() {
 
   //REVIEW:
   if(returnHome){
-    if(x < 3 && y < 3){  // as the robot gets closer to the original starting position,
+    driveTrain.setPower(0, 0);
+    delay(2000);
+    driveStraight(400);
+    if(abs(x) < 10 && abs(y) < 10){  // as the robot gets closer to the original starting position,
                          // x and y should get closer to 0, at this point, want to stop robot
       state = STOP;
-      displayXYZ(); //print to screen coordinates of candle
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("MADE IT HOME!!!!");
     }
   }
   //Main flow control
@@ -338,6 +349,7 @@ void loop() {
       // }
       lcd.print("Flame is in front");
       driveTrain.setPower(0, 0);
+      calculateCandleOffset();
       // bool hVal;
       // bool xVal;
 
@@ -368,9 +380,15 @@ void loop() {
           lcd.setCursor(0, 0);
           if(!fireSensor.isFire()){
           lcd.print("Blew out candle");
+          writeLED(false);
+          saveValues();
+          displayXYZ();
+          driveTrain.setPower(0, 0);
+          delay(5000);
         //}else{
+          driveStraight(400);
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
-          state = STOP; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
+          state = WALLFOLLOW; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
         //}
         //}
       }
@@ -379,6 +397,7 @@ void loop() {
       //lcd.clear();
       //lcd.setCursor(0, 0);
       //lcd.print("TRAVELTOFLAME");
+      writeLED(true);
       firstTurn = false;
       distToCandle = sideUltra.avg();
       //lcd.setCursor(0, 1);
@@ -388,13 +407,14 @@ void loop() {
       lcd.print("Center height");
       driveTrain.setPower(0, 0);
       delay(2000);
-      calcZ();
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print(z);
-      delay(2000);
+      // calcZ();
+      // lcd.clear();
+      // lcd.setCursor(0, 0);
+      // lcd.print(z);
+      // delay(2000);
       fireSensor.centerHeight();
       centerFlameX();
+      distToCandle = sideUltra.readDistance();
       driveTrain.setPower(0, 0);
       delay(2000);
 
@@ -403,19 +423,22 @@ void loop() {
     //   //   state = FLAME;
     //   // }
        goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
-       turnInitialize(RIGHT);
+       //if(distToCandle > 30){
+       if(0){
+         turnInitialize(RIGHT);
        //driveFlameSeen();
        //firstTurn = true;
-       driveFlameSeen(1000);
+          driveFlameSeen(1000);
        //firstTurn = false;
-       goToFlame = true;
-       turnInitialize(LEFT);
-
+          goToFlame = true;
+          turnInitialize(LEFT);
+      }
+       calcZ();
        if(fireSensor.isFire()){
          state = FLAME;
        }
        driveTrain.setPower(0, 0);
-       delay(3000);
+       delay(500);
        break;
 
      case TURNRIGHTLINE:
@@ -927,9 +950,9 @@ bool driveStraight(float distToGo){
        //return;
      }
 
-     else if ((irSensor.avg() < 30)||(frontLeftUltra.avg()&&resumeWallFollowing)){
+     else if ((irSensor.avg() < 30)||(frontLeftUltra.avg() < 30)){
        driveTrain.setPower(0, 0);
-       delay(1000);
+       delay(500);
        if(cliff){
          turnInitialize(RIGHT);
          cliff = false;
@@ -1053,23 +1076,27 @@ void islandTurn(int distance){
   resumeWallFollowing = false;
   //turnLeft = true;
   islandTurnBool = true;
-  driveStraight(10);
+  resumeWallFollowing = driveStraight(10);
   stopMoving();
   delay(250);
+
+  if(resumeWallFollowing){
+    return;
+  }
   turnInitialize(LEFT);
   stopMoving();
   delay(250);
-  driveStraight(15);
-  resumeWallFollowing=true;
-  driveStraight(1);
-  stopMoving();
-  delay(250);
-  turnInitialize(LEFT);
-  stopMoving();
-  delay(250);
-  stopMoving();
-  delay(500);
-  driveStraight(15);
+  // driveStraight(15);
+  // resumeWallFollowing=true;
+  // driveStraight(1);
+  // stopMoving();
+  // delay(250);
+  // turnInitialize(LEFT);
+  // stopMoving();
+  // delay(250);
+  // stopMoving();
+  // delay(500);
+  // driveStraight(15);
   // driveStraight(25);
   // stopMoving();
   // delay(500);
@@ -1209,7 +1236,9 @@ void turn(int turnLeft){
 }
 
 void calculateCandleOffset(){
-  int offset = sideUltra.avg();
+  int offset = sideUltra.readDistance();
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
+  gyro = euler.x(); //x value of IMU
   x = x + offset*cos(gyro);
   y = y + offset*sin(gyro);
 }
@@ -1223,7 +1252,7 @@ void lineBack(){
   calcXandY();
   driveTrain.setPower(0, 0);
   delay(500);
-  driveTrain.setPower(-210, -210);
+  driveTrain.setPower(-190, -220);
   delay(2000);
   leftEncTicks=-leftEncTicks;
   rightEncTicks=-rightEncTicks;
@@ -1374,6 +1403,8 @@ void calcZ(){
   flameDistance = (sideUltra.avg())/2.54;
   lcd.print(flameDistance);
   delay(2000);
+  fanServo.write(80);
+  delay(500);
   if(fireSensor.getz() > 511){
     angle = ((0.575959/1022)*fireSensor.getz())-0.2879793;
 
@@ -1382,5 +1413,16 @@ void calcZ(){
     angle = 0.2879793 - ((0.575959/1022)*fireSensor.getz());
 
   }
-  z = (heightOfRobot - tan(angle)*flameDistance) * 1.37; //flameDistance is set to 8
+  z = (heightOfRobot - tan(angle)*flameDistance); //flameDistance is set to 8
+}
+
+void writeLED(int red){
+  if(red){
+    digitalWrite(REDLED, HIGH);
+    digitalWrite(BLUELED, LOW);
+  }
+  else{
+    digitalWrite(BLUELED, HIGH);
+    digitalWrite(REDLED, LOW);
+  }
 }

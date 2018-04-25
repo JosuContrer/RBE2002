@@ -74,21 +74,19 @@ int Ultrasonic::readDistance(){
        divider++;
      }
    }
-
    //Take average of values
    if(divider!=0){
      avg=sum/divider;
    }
 
    else{
-     avg = 40;//random number that wont trigger anything
+     avg = 40; //random number that wont trigger anything
    }
 
    //Wrap protection
    if(!(avg<40&&avg>0)){
      avg=40;
    }
-
    return avg;
  }
 
