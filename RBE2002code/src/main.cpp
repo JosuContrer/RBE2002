@@ -18,6 +18,7 @@
 #include "MotorStates.h"
 #include "line.h"
 #include "IRrangeFinder.h"
+#include <math.h>
 //RYAN
 
 //////////////
@@ -48,8 +49,8 @@ float x = 0;
 float y = 0;
 float z = 0;
 float saveX, saveY, saveZ;
-unsigned long leftEncTicks = 0;
-unsigned long rightEncTicks = 0;
+ long leftEncTicks = 0;
+ long rightEncTicks = 0;
 int stop;
 int desiredGyro;
 int previousDistance=0;
@@ -68,7 +69,7 @@ float finalDistance;
 MotorStates testMotor;
 int turns=0;
 int distToCandle= 0;
-
+bool resumeWallFollowing;
 
 ////////////////////////
 //Function prototypes //
@@ -122,9 +123,7 @@ extern Servo fanServo;
 PID encoderPID;
 PID gyroPID;
 extern Fan fan;
-
 GP2Y0A02YK0F irSensor;
-
 Line lineOne(LINEFOLLOWERONE,10);
 Line lineTwo(LINEFOLLOWERTWO,10);
 
@@ -204,7 +203,9 @@ void loop() {
 // driveStraight(10);
      imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
      gyro = euler.x(); //x value of IMU
-    // lcd.setCursor(0, 1);
+     if((leftEncTicks+rightEncTicks)/2>2222){
+       calcXandY();
+     }   // lcd.setCursor(0, 1);
     // lcd.print(gyro);
 
   //   turnInitialize(RIGHT);
@@ -663,9 +664,13 @@ void followWall(){
  *          1/800 *17.28 * 1/3                      *
  ****************************************************/
 void calcXandY(){
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+
+  gyro=euler.x();
   double temp= (leftEncTicks + rightEncTicks)/2;
-  x = x + ((temp *.0072*2)/ 8) * cos(gyro);   //REVIEW: Add back in gyro code
-  y = y + ((temp *.0072*2)/ 8) * sin(gyro);
+
+  x = x + ((temp *.0072*2)/ 8) * cos(radians(gyro));   //REVIEW: Add back in gyro code
+  y = y + ((temp *.0072*2)/ 8) * sin(radians(gyro));
   leftEncTicks=0;
   rightEncTicks=0;
   //TODO: For final distance, must use ultrasonic to get distance from robot to candle
@@ -916,7 +921,7 @@ bool driveStraight(float distToGo){
        //return;
      }
 
-     else if ((irSensor.avg() < 30) || (frontLeftUltra.avg() < 30)){
+     else if ((irSensor.avg() < 30)||(frontLeftUltra.avg()&&resumeWallFollowing)){
        driveTrain.setPower(0, 0);
        delay(1000);
        if(cliff){
@@ -979,6 +984,7 @@ bool driveStraight(float distToGo){
      //lcd.print(newRightSpeed);
      distTraveled = returnDistance();
    }
+   calcXandY();
   // if(goToFlame){
   //      turnInitialize(RIGHT);
   //    }
@@ -1038,20 +1044,26 @@ double returnDistance(){
 }
 
 void islandTurn(int distance){
-  bool resumeWallFollowing = false;
+  resumeWallFollowing = false;
   //turnLeft = true;
   islandTurnBool = true;
-  resumeWallFollowing = driveStraight(distance);
+  driveStraight(10);
   stopMoving();
-  delay(500);
-
-  if(resumeWallFollowing){
-    return;
-  }
+  delay(250);
   turnInitialize(LEFT);
   stopMoving();
+  delay(250);
+  driveStraight(15);
+  resumeWallFollowing=true;
+  driveStraight(1);
+  stopMoving();
+  delay(250);
+  turnInitialize(LEFT);
+  stopMoving();
+  delay(250);
+  stopMoving();
   delay(500);
-
+  driveStraight(15);
   // driveStraight(25);
   // stopMoving();
   // delay(500);
@@ -1202,10 +1214,14 @@ void stopMoving(){
 
 void lineBack(){
   //lcd.print("in cliff");
+  calcXandY();
   driveTrain.setPower(0, 0);
   delay(500);
-  driveTrain.setPower(-175, -210);
+  driveTrain.setPower(-210, -210);
   delay(2000);
+  leftEncTicks=-leftEncTicks;
+  rightEncTicks=-rightEncTicks;
+  calcXandY();
   driveTrain.setPower(0, 0);
   delay(500);
   cliff = true;
