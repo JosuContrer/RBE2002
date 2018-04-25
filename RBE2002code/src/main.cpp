@@ -68,7 +68,8 @@ float finalDistance;
 MotorStates testMotor;
 int turns=0;
 int distToCandle= 0;
-
+float heightOfRobot = 9;
+int flameDistance = 8;
 
 ////////////////////////
 //Function prototypes //
@@ -101,7 +102,7 @@ void calculateCandleOffset();
 void stopMoving();
 void lineBack();
 void driveFlameSeen(int);
-
+void calcZ();
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -385,6 +386,11 @@ void loop() {
       lcd.setCursor(0, 0);
       lcd.print("Center height");
       driveTrain.setPower(0, 0);
+      delay(2000);
+      calcZ();
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print(z);
       delay(2000);
       fireSensor.centerHeight();
       centerFlameX();
@@ -1344,4 +1350,21 @@ void driveFlameSeen(int distToGo){
   // newRightSpeed = baseRightSpeed + driveCompFilter;
   // driveTrain.setPower(newLeftSpeed, newRightSpeed);
 
+}
+
+
+void calcZ(){
+  float angle;
+  flameDistance = (sideUltra.avg())/2.54;
+  lcd.print(flameDistance);
+  delay(2000);
+  if(fireSensor.getz() > 511){
+    angle = ((0.575959/1022)*fireSensor.getz())-0.2879793;
+
+  }
+  else{
+    angle = 0.2879793 - ((0.575959/1022)*fireSensor.getz());
+
+  }
+  z = (heightOfRobot - tan(angle)*flameDistance) * 1.37; //flameDistance is set to 8
 }
