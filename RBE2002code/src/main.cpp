@@ -37,7 +37,7 @@ int turnLeft = 1;
 bool cliff = false;
 bool islandTurnBool = false;
 bool firstTurn = false;
-
+bool resumeWallFollowing = false;
 //////////////////////////
 //State diagram control //
 //////////////////////////
@@ -69,14 +69,8 @@ float finalDistance;
 MotorStates testMotor;
 int turns=0;
 int distToCandle= 0;
-<<<<<<< HEAD
 float heightOfRobot = 9;
 int flameDistance = 8;
-||||||| merged common ancestors
-
-=======
-bool resumeWallFollowing;
->>>>>>> 3827771beae90a7c8c4f155f741bf4382013edb3
 
 ////////////////////////
 //Function prototypes //
