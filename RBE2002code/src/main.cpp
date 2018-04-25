@@ -642,7 +642,7 @@ void followWall(){
      turnLeft = true;
      //driveStraight(10);
      //calcXandY();
-     islandTurn(10);
+     islandTurn(15);
 
     //if(reachedDistance){
     //turnLeft = turnInitialize(LEFT);
@@ -967,7 +967,7 @@ bool driveStraight(float distToGo){
        //return;
      }
 
-     else if ((irSensor.avg() < 30)||(frontLeftUltra.avg() < 30)){
+     else if ((irSensor.avg() < 30)||(frontLeftUltra.avg() < 20)){
        driveTrain.setPower(0, 0);
        delay(500);
        if(cliff){
