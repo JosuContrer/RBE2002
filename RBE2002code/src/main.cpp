@@ -69,7 +69,7 @@ float finalDistance;
 MotorStates testMotor;
 int turns=0;
 int distToCandle= 0;
-float heightOfRobot = 9;
+float heightOfRobot = 8;
 int flameDistance = 8;
 
 ////////////////////////
@@ -383,12 +383,13 @@ void loop() {
           writeLED(false);
           saveValues();
           displayXYZ();
-          driveTrain.setPower(0, 0);
           delay(5000);
+          //driveTrain.setPower(0, 0);
+
         //}else{
           driveStraight(400);
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
-          state = WALLFOLLOW; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
+        //  state = WALLFOLLOW; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
         //}
         //}
       }
@@ -1236,11 +1237,14 @@ void turn(int turnLeft){
 }
 
 void calculateCandleOffset(){
-  int offset = sideUltra.readDistance();
+  for(int i = 0; i<10; i++){
+    sideUltra.avg();
+  }
+  int offset = sideUltra.avg();
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
-  x = x + offset*cos(gyro);
-  y = y + offset*sin(gyro);
+  x = x + offset*cos(gyro - 90);
+  y = y + offset*sin(gyro - 90);
 }
 
 void stopMoving(){
