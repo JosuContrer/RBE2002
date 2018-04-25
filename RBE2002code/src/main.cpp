@@ -105,6 +105,7 @@ void lineBack();
 void driveFlameSeen(int);
 void calcZ();
 void writeLED(int);
+bool returnHomeDrive(float);
 ////////////////////
 //Object Creation //
 ////////////////////
@@ -210,7 +211,7 @@ void loop() {
 // driveStraight(10);
      imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
      gyro = euler.x(); //x value of IMU
-     if((leftEncTicks+rightEncTicks)/2>2222){
+     if((leftEncTicks+rightEncTicks)/2){
        calcXandY();
      }   // lcd.setCursor(0, 1);
     // lcd.print(gyro);
@@ -284,10 +285,16 @@ void loop() {
 
   //REVIEW:
   if(returnHome){
-    driveTrain.setPower(0, 0);
-    delay(2000);
-    driveStraight(400);
-    if(abs(x) < 10 && abs(y) < 10){  // as the robot gets closer to the original starting position,
+    // driveTrain.setPower(0, 0);
+    // delay(2000);
+    //driveStraight(400);
+    static int count = 1;
+
+    if(count){
+      returnHomeDrive(400);
+      count--;
+    }
+    if(abs(x) < 15 && abs(y) < 15){  // as the robot gets closer to the original starting position,
                          // x and y should get closer to 0, at this point, want to stop robot
       state = STOP;
       lcd.clear();
@@ -349,7 +356,7 @@ void loop() {
       // }
       lcd.print("Flame is in front");
       driveTrain.setPower(0, 0);
-      calculateCandleOffset();
+      //calculateCandleOffset();
       // bool hVal;
       // bool xVal;
 
@@ -387,6 +394,10 @@ void loop() {
           //driveTrain.setPower(0, 0);
 
         //}else{
+        goToFlame = false;
+        cliff = false;
+        islandTurnBool = false;
+        blowing = false;
           driveStraight(400);
           returnHome = true; //use to have robot stop when returns to (0.0) posiion
         //  state = WALLFOLLOW; //COMBAK: Change this to WALLFOLLOW: have robot continue driving home
@@ -414,8 +425,9 @@ void loop() {
       // lcd.print(z);
       // delay(2000);
       fireSensor.centerHeight();
+      calculateHeight();
       centerFlameX();
-      distToCandle = sideUltra.readDistance();
+      //distToCandle = sideUltra.readDistance();
       driveTrain.setPower(0, 0);
       delay(2000);
 
@@ -425,21 +437,22 @@ void loop() {
     //   // }
        goToFlame = true;  //will cause robot to go to TRAVELTOFLAME switch case
        //if(distToCandle > 30){
-       if(0){
-         turnInitialize(RIGHT);
-       //driveFlameSeen();
-       //firstTurn = true;
-          driveFlameSeen(1000);
-       //firstTurn = false;
-          goToFlame = true;
-          turnInitialize(LEFT);
-      }
-       calcZ();
+      //  if(0){
+      //    turnInitialize(RIGHT);
+      //  //driveFlameSeen();
+      //  //firstTurn = true;
+      //     driveFlameSeen(1000);
+      //  //firstTurn = false;
+      //     goToFlame = true;
+      //     turnInitialize(LEFT);
+      // }
+       //calcZ();
        if(fireSensor.isFire()){
          state = FLAME;
        }
        driveTrain.setPower(0, 0);
        delay(500);
+
        break;
 
      case TURNRIGHTLINE:
@@ -710,9 +723,12 @@ void calcXandY(){
  * Calculate height of flame
  */
 void calculateHeight(){
+  for(int i = 0; i < 10; i++){
+    sideUltra.avg();
+  }
   int theta = fanServo.read();  //determine angle of servo, may need to offset this value depending on how servo is mounted
-  int distanceToFlame = sideUltra.readDistance(); //use ultrasonic to get distance to flame
-  z = tan(theta)*distanceToFlame + OFFSET_HEIGHT; //TODO: Set OFFSET_HEIGHT to be height of flame sensor off the ground
+  int distanceToFlame = (sideUltra.avg()/2.54); //use ultrasonic to get distance to flame
+  z = z + (tan(radians(theta - 80))*distanceToFlame + 8); //TODO: Set OFFSET_HEIGHT to be height of flame sensor off the ground
 }
 
 
@@ -1243,8 +1259,8 @@ void calculateCandleOffset(){
   int offset = sideUltra.avg();
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER); //get vector from IMU
   gyro = euler.x(); //x value of IMU
-  x = x + offset*cos(gyro - 90);
-  y = y + offset*sin(gyro - 90);
+  x = x + offset;//*cos(radians(((int) gyro + 90) % 360));
+  y = y; //+ offset;//*sin(radians(((int) gyro + 90) % 360));
 }
 
 void stopMoving(){
@@ -1429,4 +1445,81 @@ void writeLED(int red){
     digitalWrite(BLUELED, HIGH);
     digitalWrite(REDLED, LOW);
   }
+}
+
+
+bool returnHomeDrive(float distToGo){
+  //NOTE: These values must add to 1
+  leftEncTicks = 0;
+  rightEncTicks = 0;
+  if (irSensor.avg() < 30){
+    driveTrain.setPower(0, 0);
+    delay(1000);
+    turnInitialize(RIGHT);
+    state=WALLFOLLOW;
+    return true;
+  }
+
+
+  baseLeftSpeed = 190;
+  baseRightSpeed = 210;
+  distTraveled = returnDistance();
+  finalDistance = distTraveled + distToGo;
+
+   while(distTraveled < finalDistance){
+
+
+
+     if((irSensor.avg() < 30)){
+       driveTrain.setPower(0, 0);
+       delay(500);
+       //if(cliff){
+         //turnInitialize(RIGHT);
+         //cliff = false;
+       //}
+       state=WALLFOLLOW;
+       return true;
+     }
+
+
+     else if(isSensorCliff()){
+       lineBack();
+       break;
+     }
+
+     //Encoder PID
+     float gyroPercentage = 0;
+     float encoderPercentage = .2;
+     float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+
+     //Gyro PID
+     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+     int gyroError = gyroPID.calc(gyroLookUp(gyro), euler.x());
+     //Complimentary Filter
+     int driveCompFilter = (gyroPercentage * gyroError) + (encoderPercentage * encoderError);
+     newLeftSpeed = baseLeftSpeed - driveCompFilter;
+     newRightSpeed = baseRightSpeed + driveCompFilter;
+     if (newLeftSpeed > 255){
+       newLeftSpeed = 255;
+     }
+     if (newRightSpeed > 255){
+       newRightSpeed=255;
+     }
+
+     driveTrain.setPower(newLeftSpeed, newRightSpeed);
+     delay(10);
+
+     distTraveled = returnDistance();
+   }
+   calcXandY();
+
+   irSensor.clear();
+
+
+    turnLeft=false;
+
+        state=WALLFOLLOW;
+
+    return false;
+
 }

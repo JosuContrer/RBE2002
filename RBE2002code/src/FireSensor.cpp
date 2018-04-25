@@ -195,7 +195,7 @@ bool FireSensor::centerHeight(){
   bool below;
   while(abs(getz() - CENTER_VAL) > 10){
     useSensor();
-    if((start > 170) || (start < 30)){
+    if((start > 170) || (start < 20)){
       start = STARTVAL;
     }
     if(getz() > CENTER_VAL){
