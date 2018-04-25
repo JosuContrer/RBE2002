@@ -10,7 +10,7 @@
 //CONSTANTS //
 //////////////
 #define STARTVAL 80  //where Servo normally starts
-#define CENTER_VAL 580 //Where the flame is centered according to the sensor
+#define CENTER_VAL 375 //Where the flame is centered according to the sensor
 
 
 //////////////////////
@@ -157,7 +157,7 @@ bool FireSensor::isFire(){
 * Get z value for the flame
 * @return Z value
 */
-int FireSensor::getz(){
+int FireSensor::getx(){
   return Iy[0];
 }
 
@@ -166,7 +166,7 @@ int FireSensor::getz(){
 * Return x value for the flame
 * @return X value
 */
-int FireSensor::getx(){
+int FireSensor::getz(){
   return Ix[0];
 }
 
@@ -193,9 +193,11 @@ bool FireSensor::centerHeight(){
   // delay(3000);
   int start = STARTVAL;
   bool below;
-  while(abs(getz() - CENTER_VAL) > 2){
+  while(abs(getz() - CENTER_VAL) > 10){
     useSensor();
-
+    if((start > 170) || (start < 30)){
+      start = STARTVAL;
+    }
     if(getz() > CENTER_VAL){
         below=false;
         fanServo.write(start++);
@@ -258,7 +260,7 @@ void FireSensor::blowOutCandle(){
   * Do NOT run this code until the range is determined, otherwise the servo will try and go the *
   * full 180 degrees and make either stall the servo or break something on the robot            *
   ***********************************************************************************************/
-  oscillate(3);
+  oscillate(1);
   fan.maxPower(false);
   fanServo.write(80);
 }

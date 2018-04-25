@@ -160,7 +160,7 @@ void setup() {
   //PIDs
   driveStraightPID.setpid(15, 0,.05); //PID to drive straight  //was 30
   //turnPID.setpid(100,.3,.01); //PID for turning //was 13
-  centerFlameXPID.setpid(100, 0, 0); //PID for centering flame
+  centerFlameXPID.setpid(.05, 0, 0); //PID for centering flame
   encoderPID.setpid(.1, .1, 0.01);
   gyroPID.setpid(4.5, 0, 0.01);
 
@@ -823,33 +823,33 @@ bool centerFlameX(){
      delay(1000);
   //    return true;
   //  }
-  float encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
-  while(abs(fireSensor.getx() - CENTERVAL_X) > 30){
+  float encoderError = centerFlameXPID.calc(leftEncTicks, rightEncTicks);
+  while(abs(fireSensor.getx() - CENTERVAL_X) > 5){
     fireSensor.useSensor();
-    // if(fireSensor.getx() < CENTERVAL_X){
+   if(fireSensor.getx() < CENTERVAL_X){
       newLeftSpeed = baseLeftSpeed + encoderError;
       newRightSpeed = baseRightSpeed - encoderError;
-      // if (newLeftSpeed > 255){
-      //   newLeftSpeed = 255;
-      // }
-      // if (newRightSpeed > 255){
-      //   newRightSpeed=255;
-      // }
-      // driveTrain.setPower(0, newRightSpeed);
-  //  }
-    // else{
-    //   newLeftSpeed = (baseLeftSpeed + encoderError) * -1;
-    //   newRightSpeed = (baseRightSpeed - encoderError) * -1;
-    //
-    // }
+      if (newLeftSpeed > 255){
+        newLeftSpeed = 255;
+      }
+      if (newRightSpeed > 255){
+        newRightSpeed=255;
+      }
+      driveTrain.setPower(newLeftSpeed, newRightSpeed);
+   }
+    else{
+      newLeftSpeed = (baseLeftSpeed + encoderError) * -1;
+      newRightSpeed = (baseRightSpeed - encoderError) * -1;
+
+    }
     if (newLeftSpeed > 255){
       newLeftSpeed = 255;
     }
     if (newRightSpeed > 255){
       newRightSpeed=255;
     }
-    driveTrain.setPower(100, 145);
-    encoderError = encoderPID.calc(leftEncTicks, rightEncTicks);
+    driveTrain.setPower(newLeftSpeed, newRightSpeed);
+    encoderError = centerFlameXPID.calc(leftEncTicks, rightEncTicks);
     lcd.setCursor(0, 1);
     lcd.print(fireSensor.getx());
     lcd.setCursor(10, 1);
